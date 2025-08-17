@@ -15,7 +15,7 @@ class ProductoController extends Controller
     // Mostrar todos los productos
     public function index()
     {
-        $productos = Producto::all();
+        $productos = Producto::paginate(10);
         return view('productos.index', compact('productos'));
     }
 
@@ -29,16 +29,21 @@ class ProductoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string',
-            'cantidad' => 'required|integer',
-            'precio' => 'required|numeric',
-            'categoria' => 'nullable|string',
-        ]);
+    'nombre' => 'required|string|max:255',
+    'cantidad' => 'required|integer|min:0',
+    'precio' => 'required|numeric|min:0',
+    'categoria' => 'nullable|string|max:255',
+]);
 
         Producto::create($request->all());
 
         return redirect()->route('productos.index')->with('success', 'Producto creado correctamente');
     }
+
+    public function show(Producto $producto)
+{
+    return view('productos.show', compact('producto'));
+}
 
     // Mostrar formulario para editar producto existente
     public function edit(Producto $producto)
@@ -50,11 +55,11 @@ class ProductoController extends Controller
     public function update(Request $request, Producto $producto)
     {
         $request->validate([
-            'nombre' => 'required|string',
-            'cantidad' => 'required|integer',
-            'precio' => 'required|numeric',
-            'categoria' => 'nullable|string',
-        ]);
+    'nombre' => 'required|string|max:255',
+    'cantidad' => 'required|integer|min:0',
+    'precio' => 'required|numeric|min:0',
+    'categoria' => 'nullable|string|max:255',
+]);
 
         $producto->update($request->all());
 
