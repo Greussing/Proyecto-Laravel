@@ -8,6 +8,8 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white p-6 rounded shadow">
+
+                {{-- Mensajes de error globales --}}
                 @if ($errors->any())
                     <div class="mb-4">
                         <ul class="text-red-500 list-disc list-inside">
@@ -19,7 +21,13 @@
                 @endif
 
                 <form action="{{ route('productos.update', $producto->id) }}" method="POST">
-                    @include('productos._form', ['producto' => $producto])
+                    @csrf
+                    @method('PUT')
+
+                    {{-- Mantener página actual --}}
+                    <input type="hidden" name="page" value="{{ request('page', 1) }}">
+
+                    @include('productos._form', ['producto' => $producto, 'categorias' => $categorias])
                 </form>
             </div>
         </div>

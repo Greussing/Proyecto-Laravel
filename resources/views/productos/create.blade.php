@@ -8,6 +8,8 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white p-6 rounded shadow">
+
+                {{-- Mensajes de error globales --}}
                 @if ($errors->any())
                     <div class="mb-4">
                         <ul class="text-red-500 list-disc list-inside">
@@ -18,8 +20,10 @@
                     </div>
                 @endif
 
+                {{-- Formulario de creación --}}
                 <form action="{{ route('productos.store') }}" method="POST">
-                    @include('productos._form')
+                    @csrf
+                    @include('productos._form', ['categorias' => $categorias])
                 </form>
             </div>
         </div>

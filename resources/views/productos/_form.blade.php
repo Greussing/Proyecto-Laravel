@@ -1,52 +1,121 @@
 @csrf
 
-@if(isset($producto))
-    @method('PUT')
-@endif
-
+{{-- Nombre --}}
 <div class="mb-4">
-    <label for="nombre" class="block text-gray-700 font-semibold">Nombre:</label>
-    <input type="text" name="nombre" id="nombre"
-           value="{{ old('nombre', $producto->nombre ?? '') }}"
-           class="w-full border-gray-300 rounded mt-1 @error('nombre') border-red-500 @enderror" required>
+    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+    <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $producto->nombre ?? '') }}"
+        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200">
     @error('nombre')
-        <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+        <p class="text-red-600 text-sm">{{ $message }}</p>
     @enderror
 </div>
 
+{{-- Cantidad --}}
 <div class="mb-4">
-    <label for="cantidad" class="block text-gray-700 font-semibold">Cantidad:</label>
-    <input type="number" name="cantidad" id="cantidad"
-           value="{{ old('cantidad', $producto->cantidad ?? '') }}"
-           class="w-full border-gray-300 rounded mt-1 @error('cantidad') border-red-500 @enderror" required>
+    <label for="cantidad" class="block text-sm font-medium text-gray-700">Cantidad</label>
+    <input type="number" name="cantidad" id="cantidad" min="0"
+        value="{{ old('cantidad', $producto->cantidad ?? '') }}"
+        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200">
     @error('cantidad')
-        <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+        <p class="text-red-600 text-sm">{{ $message }}</p>
     @enderror
 </div>
 
+{{-- Precio --}}
 <div class="mb-4">
-    <label for="precio" class="block text-gray-700 font-semibold">Precio:</label>
-    <input type="number" step="0.01" name="precio" id="precio"
-           value="{{ old('precio', $producto->precio ?? '') }}"
-           class="w-full border-gray-300 rounded mt-1 @error('precio') border-red-500 @enderror" required>
+    <label for="precio" class="block text-sm font-medium text-gray-700">Precio</label>
+
+    <div class="relative mt-1">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-700 font-semibold">Gs.</span>
+        <input type="text" name="precio" id="precio"
+            value="{{ old('precio', isset($producto) ? number_format($producto->precio, 0, ',', '.') : '') }}"
+            class="pl-12 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200">
+    </div>
+
     @error('precio')
-        <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+        <p class="text-red-600 text-sm">{{ $message }}</p>
     @enderror
 </div>
 
+<script>
+    const precioInput = document.getElementById('precio');
+
+    function formatNumber(value) {
+        return value.replace(/\D/g, '') // solo números
+            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // separador de miles
+    }
+
+    precioInput.value = formatNumber(precioInput.value);
+
+    precioInput.addEventListener('input', function() {
+        let cursorPos = this.selectionStart;
+        let originalLength = this.value.length;
+        this.value = formatNumber(this.value);
+        let newLength = this.value.length;
+        this.selectionEnd = cursorPos + (newLength - originalLength);
+    });
+
+    // Antes de enviar, limpiar a número puro
+    precioInput.form.addEventListener('submit', function() {
+        precioInput.value = precioInput.value.replace(/\D/g, '');
+    });
+</script>
+
+{{-- Categoría --}}
 <div class="mb-4">
-    <label for="categoria" class="block text-gray-700 font-semibold">Categoría:</label>
-    <input type="text" name="categoria" id="categoria"
-           value="{{ old('categoria', $producto->categoria ?? '') }}"
-           class="w-full border-gray-300 rounded mt-1 @error('categoria') border-red-500 @enderror">
+    <label for="categoria" class="block text-sm font-medium text-gray-700">Categoría</label>
+    @php
+        $categoriaSeleccionada = old('categoria', $producto->categoriaRelacion->id ?? null);
+        $categoriaActual = $categoriaSeleccionada
+            ? $categorias->firstWhere('id', $categoriaSeleccionada)->nombre ?? 'Seleccione una categoría'
+            : 'Seleccione una categoría';
+    @endphp
+
+    <details class="relative border rounded px-2 py-1 mt-1 w-full">
+        <summary class="cursor-pointer select-none">
+            {{ $categoriaActual }}
+        </summary>
+        <div class="absolute bg-white border rounded shadow-md mt-1 w-full z-10 max-h-60 overflow-y-auto">
+            <ul>
+                @foreach ($categorias as $cat)
+                    @if (!$categoriaSeleccionada || $cat->id != $categoriaSeleccionada)
+                        <li>
+                            <a href="#"
+                                onclick="event.preventDefault();
+                                    document.getElementById('categoria').value='{{ $cat->id }}';
+                                    this.closest('details').removeAttribute('open');
+                                    this.closest('details').querySelector('summary').textContent='{{ $cat->nombre }}';"
+                                class="block px-3 py-2 hover:bg-gray-100 rounded">
+                                {{ $cat->nombre }}
+                            </a>
+                        </li>
+                    @endif
+                @endforeach
+            </ul>
+        </div>
+    </details>
+
+    <input type="hidden" name="categoria" id="categoria" value="{{ $categoriaSeleccionada }}">
+
     @error('categoria')
-        <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+        <p class="text-red-600 text-sm">{{ $message }}</p>
     @enderror
 </div>
 
-<div class="flex justify-end">
-    <button type="button" onclick="history.back()" class="text-gray-600 hover:underline mr-4">Cancelar</button>
+<script>
+    function selectCategoria(nombre, element) {
+        document.getElementById('categoria').value = nombre;
+        document.getElementById('selectedCategoria').textContent = nombre;
+        element.closest('details').removeAttribute('open');
+    }
+</script>
+
+{{-- Botones --}}
+<div class="flex justify-end space-x-2">
+    <a href="{{ route('productos.index') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+        Atrás
+    </a>
     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        {{ isset($producto) ? 'Guardar Cambios' : 'Guardar' }}
+        Guardar
     </button>
 </div>
