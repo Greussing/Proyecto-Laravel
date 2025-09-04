@@ -11,9 +11,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Llamamos al seeder de categorías
         $this->call([
             CategoriaSeeder::class,
+            UserSeeder::class, // 👈 aquí añadimos el seeder de usuarios
         ]);
     }
 }

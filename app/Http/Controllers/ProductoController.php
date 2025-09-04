@@ -99,7 +99,6 @@ class ProductoController extends Controller
         $pageValorTotal = $productosPagina->sum(fn($p) => $p->cantidad * $p->precio);
 
         $categorias = Categoria::all();
-        return response()->json($categorias);
 
         return view('productos.index', compact(
             'productos',
