@@ -1,6 +1,7 @@
 <x-app-layout>
+    {{-- Encabezado de la página --}}
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
+        <h2 class="text-xl font-semibold leading-tight text-white">
             Listado de Productos
         </h2>
     </x-slot>
@@ -8,7 +9,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Mensaje de éxito --}}
+            {{-- Mensaje de éxito → se muestra si hay session('success') (ej: al crear/editar producto) --}}
             @if (session('success'))
                 <div class="mb-4 text-green-700 bg-green-100 p-4 rounded">
                     {{ session('success') }}
@@ -17,10 +18,10 @@
 
             <div class="bg-white shadow rounded-lg p-6">
 
-                {{-- Contenedor filtros + botón --}}
+                {{-- Contenedor filtros + botón crear producto --}}
                 <div class="flex items-center justify-between mb-4 flex-wrap gap-2 w-full">
 
-                    {{-- Filtros (UN SOLO form global) --}}
+                    {{-- Filtros de búsqueda → GET hacia productos.index (ProductoController@index) --}}
                     <form method="GET" action="{{ route('productos.index') }}" class="flex flex-wrap gap-2">
 
                         {{-- Buscar por nombre --}}
@@ -35,13 +36,13 @@
                                 </svg>
                             </button>
 
-                            <!-- Input -->
+                            <!-- Input búsqueda -->
                             <input type="text" name="search" placeholder="Buscar por Nombre"
                                 value="{{ request('search') }}"
                                 class="border rounded pl-9 pr-14 py-1 w-60 md:w-72 focus:ring-2 focus:ring-indigo-500 outline-none"
                                 oninput="toggleSearchIcons(this)">
 
-                            <!-- Botón limpiar -->
+                            <!-- Botón limpiar (×) → elimina el parámetro "search" conservando otros filtros -->
                             <div id="search-icons"
                                 class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 {{ request('search') ? '' : 'hidden' }}">
                                 <a href="{{ route('productos.index', request()->except(['search', 'page'])) }}"
@@ -49,6 +50,7 @@
                             </div>
                         </div>
 
+                        {{-- Script mostrar/ocultar icono limpiar --}}
                         <script>
                             function toggleSearchIcons(input) {
                                 const icons = document.getElementById('search-icons');
@@ -60,10 +62,11 @@
                             }
                         </script>
 
-                        {{-- Categorías --}}
+                        {{-- Filtro por Categorías --}}
                         <details class="relative border rounded px-2 py-1">
                             <summary
                                 class="cursor-pointer select-none summary-arrow {{ request('categorias') ? 'text-blue-600 font-bold' : '' }}">
+                                {{-- Si hay categorías seleccionadas, mostrarlas --}}
                                 @if (request('categorias'))
                                     Categorías:
                                     @php
@@ -74,12 +77,14 @@
                                             ->toArray();
                                     @endphp
                                     {{ implode(', ', $nombresSeleccionados) }}
+                                    {{-- Botón limpiar categorías --}}
                                     <a href="{{ route('productos.index', request()->except(['categorias', 'page'])) }}"
                                         class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
                                 @else
                                     Categorías
                                 @endif
                             </summary>
+                            {{-- Listado de checkboxes de categorías --}}
                             <div
                                 class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56 max-h-60 overflow-y-auto">
                                 @foreach ($categorias as $cat)
@@ -93,7 +98,7 @@
                             </div>
                         </details>
 
-                        {{-- Stock --}}
+                        {{-- Filtro por Stock (disponibles/agotados) --}}
                         <details class="relative border rounded px-2 py-1">
                             <summary
                                 class="cursor-pointer select-none summary-arrow {{ request('stock') ? 'text-blue-600 font-bold' : '' }}">
@@ -102,14 +107,14 @@
                                     @php $stocks = (array) request('stock'); @endphp
                                     {{ in_array('disponibles', $stocks) ? 'Disponibles' : '' }}
                                     {{ in_array('agotados', $stocks) ? (in_array('disponibles', $stocks) ? ', Agotados' : 'Agotados') : '' }}
-
+                                    {{-- Botón limpiar stock --}}
                                     <a href="{{ route('productos.index', request()->except(['stock', 'page'])) }}"
                                         class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
                                 @else
                                     Stock
                                 @endif
                             </summary>
-
+                            {{-- Opciones de stock --}}
                             <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
                                 <label class="flex items-center">
                                     <input type="checkbox" id="chk-disponibles" name="stock[]" value="disponibles"
@@ -124,7 +129,7 @@
                                 </label>
                             </div>
                         </details>
-
+                        {{-- Script para stock (mutuamente excluyentes) --}}
                         <script>
                             document.addEventListener('DOMContentLoaded', () => {
                                 const disponibles = document.getElementById('chk-disponibles');
@@ -132,12 +137,12 @@
                                 const form = disponibles.closest('form');
 
                                 if (disponibles && agotados) {
-                                    disponibles.addEventListener('change', () => {
+                                    disponibles.addEventListener('change', () => { // Si se marca "disponibles", desmarcar "agotados"
                                         if (disponibles.checked) agotados.checked = false;
                                         form.submit();
                                     });
 
-                                    agotados.addEventListener('change', () => {
+                                    agotados.addEventListener('change', () => { // Si se marca "agotados", desmarcar "disponibles"
                                         if (agotados.checked) disponibles.checked = false;
                                         form.submit();
                                     });
@@ -145,7 +150,7 @@
                             });
                         </script>
 
-                        {{-- Precio --}}
+                        {{-- Filtro por Precio (mín y máx) --}}
                         <details class="relative border rounded px-2 py-1">
                             <summary
                                 class="cursor-pointer select-none summary-arrow {{ request('precio_min') || request('precio_max') ? 'text-blue-600 font-bold' : '' }}">
@@ -164,6 +169,7 @@
                                     Precio
                                 @endif
                             </summary>
+                            {{-- Inputs de precio --}}
                             <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
                                 <label class="block text-sm text-gray-700">Mínimo</label>
                                 <div class="flex items-center border rounded px-2 py-1 w-full">
@@ -192,6 +198,7 @@
 
                         {{-- Ordenar por --}}
                         @php
+                            // Opciones disponibles de ordenamiento
                             $opciones = [
                                 'nombre_asc' => 'Nombre (A-Z)',
                                 'nombre_desc' => 'Nombre (Z-A)',
@@ -210,11 +217,13 @@
                             <summary
                                 class="cursor-pointer select-none summary-arrow {{ request('ordenar') ? 'text-blue-600 font-bold' : '' }}">
                                 {{ $ordenActual }}
+                                {{-- Botón limpiar orden --}}
                                 @if (request('ordenar'))
                                     <a href="{{ route('productos.index', request()->except(['ordenar', 'page'])) }}"
                                         class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
                                 @endif
                             </summary>
+                            {{-- Listado de opciones --}}
                             <div class="absolute bg-white border rounded shadow-md mt-1 w-56 z-10">
                                 <ul>
                                     @foreach ($opciones as $valor => $texto)
@@ -232,7 +241,7 @@
                         </details>
                     </form>
 
-                    <!-- Botón Crear Producto -->
+                    <!-- Botón Crear Producto → conecta con productos.create (ProductoController@create + vista create.blade.php) -->
                     <a href="{{ route('productos.create') }}" class="text-gray-500 hover:text-green-600 transition"
                         title="Crear producto">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -242,13 +251,13 @@
                     </a>
                 </div>
 
-                {{-- Script para formatear números --}}
+                {{-- Script para formatear números (inputs de precio con separador de miles) --}}
                 <script>
                     function formatNumber(value) {
                         if (!value) return '';
                         return value.toString()
-                            .replace(/\D/g, '')
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                            .replace(/\D/g, '') // eliminar caracteres no numéricos
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // agregar puntos cada 3 dígitos
                     }
 
                     function applyFormat(input) {
@@ -273,13 +282,29 @@
                     });
                 </script>
 
-                {{-- Tabla de productos --}}
+                {{-- 
+|--------------------------------------------------------------------------
+| Tabla de productos (index.blade.php)
+|--------------------------------------------------------------------------
+| Este archivo muestra todos los productos en una tabla.
+| Conecta con:
+|   - ProductoController@index → carga los productos
+|   - ProductoController@edit  → editar producto
+|   - ProductoController@destroy → eliminar producto
+| Usa:
+|   - $productos → listado paginado
+|   - $pageStockTotal → stock total mostrado en la página
+|   - $pageValorTotal → valor total mostrado en la página
+--}}
+                {{-- Si no hay productos --}}
                 @if ($productos->isEmpty())
                     <p class="text-gray-600">No hay productos registrados.</p>
                 @else
+                    {{-- Tabla principal --}}
                     <table class="min-w-full border border-gray-200">
                         <thead class="bg-gray-100">
                             <tr>
+                                {{-- Encabezados de la tabla --}}
                                 <th class="px-4 py-2 border">Id</th>
                                 <th class="px-4 py-2 border">Nombre</th>
                                 <th class="px-4 py-2 border">Categoría</th>
@@ -289,7 +314,9 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- Recorremos todos los productos --}}
                             @foreach ($productos as $producto)
+                                {{-- Fila con color rojo si el stock es menor a 5 --}}
                                 <tr class="{{ $producto->cantidad < 5 ? 'bg-red-100' : '' }}">
 
                                     {{-- Id --}}
@@ -305,6 +332,7 @@
                                     {{-- Categoría --}}
                                     <td class="px-4 py-2 border">
                                         @php
+                                            // Colores personalizados para cada categoría
                                             $colores = [
                                                 'Electrónica' => 'text-indigo-700 font-bold',
                                                 'Alimentos' => 'text-green-700 font-bold',
@@ -312,10 +340,11 @@
                                                 'Accesorios' => 'text-purple-700 font-bold',
                                                 'Herramientas' => 'text-teal-700 font-bold',
                                             ];
-
+                                            // Obtenemos nombre de categoría desde la relación en el modelo
                                             $nombreCategoria = $producto->categoriaRelacion
                                                 ? $producto->categoriaRelacion->nombre
                                                 : 'Sin Categoría';
+                                            // Seleccionamos color según categoría
                                             $color = $colores[$nombreCategoria] ?? 'text-gray-700 font-bold';
                                         @endphp
 
@@ -324,7 +353,7 @@
                                         </span>
                                     </td>
 
-                                    {{-- Cantidad --}}
+                                    {{-- Cantidad (condiciones de stock) --}}
                                     <td class="px-4 py-2">
                                         @if ($producto->cantidad == 0)
                                             <span class="text-red-600 font-bold">Agotado</span>
@@ -337,16 +366,17 @@
                                         @endif
                                     </td>
 
-                                    {{-- Precio --}}
+                                    {{-- Precio formateado con separador de miles --}}
                                     <td class="px-4 py-2 border">
                                         Gs. {{ number_format($producto->precio, 0, ',', '.') }}
                                     </td>
 
 
-                                    {{-- Acciones --}}
+                                    {{-- Acciones: Editar y Eliminar --}}
                                     <td class="px-4 py-2 border flex items-center gap-3" x-data="{ open: false }">
+                                        {{-- x-data="{ open: false }" → controla la visibilidad del modal de confirmación --}}
 
-                                        {{-- Editar --}}
+                                        {{-- Botón Editar → conecta con ProductoController@edit --}}
                                         <a href="{{ route('productos.edit', $producto->id) }}"
                                             class="text-gray-500 hover:text-blue-600 transition" title="Editar">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
@@ -357,7 +387,7 @@
                                             </svg>
                                         </a>
 
-                                        {{-- Eliminar --}}
+                                        {{-- Botón Eliminar → abre modal de confirmación --}}
                                         <button @click="open = true"
                                             class="text-red-600 hover:text-red-800 transition" title="Eliminar">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
@@ -367,7 +397,7 @@
                                             </svg>
                                         </button>
 
-                                        {{-- Modal confirmación --}}
+                                        {{-- Modal de confirmación antes de eliminar --}}
                                         <div x-show="open" x-cloak
                                             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                                             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-96">
@@ -379,13 +409,14 @@
                                                     puede
                                                     deshacer.
                                                 </p>
-
+                                                {{-- Botones del modal --}}
                                                 <div class="mt-4 flex justify-end gap-3">
+                                                    {{-- Cancelar --}}
                                                     <button @click="open = false"
                                                         class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
                                                         ❌ Cancelar
                                                     </button>
-
+                                                    {{-- Confirmar → conecta con ProductoController@destroy --}}
                                                     <form action="{{ route('productos.destroy', $producto->id) }}"
                                                         method="POST">
                                                         @csrf
@@ -404,11 +435,11 @@
                         </tbody>
                     </table>
 
-                    {{-- Resumen + paginación uniforme --}}
+                    {{-- Resumen + paginación --}}
                     <div
                         class="mt-4 p-3 bg-gray-50 rounded-lg shadow-sm flex justify-between items-start text-sm text-gray-700">
 
-                        {{-- Columna izquierda --}}
+                        {{-- Columna izquierda: información de la página actual --}}
                         <div class="flex flex-col gap-1">
                             <div>
                                 Mostrando
@@ -436,11 +467,11 @@
                             </div>
                         </div>
 
-                        {{-- Columna derecha --}}
+                        {{-- Columna derecha: botones de paginación --}}
                         <div class="flex items-center">
                             {{ $productos->links() }}
 
-                            {{-- Boton ver paginado --}}
+                            {{-- Botón para volver al modo paginado si se usó "verTodo" --}}
                             @if (request()->has('verTodo'))
                                 @php
                                     $q = request()->query();

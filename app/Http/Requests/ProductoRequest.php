@@ -7,72 +7,54 @@ use Illuminate\Validation\Rule;
 
 class ProductoRequest extends FormRequest
 {
+    // Autoriza que cualquier usuario autenticado pueda usar este request
     public function authorize(): bool
     {
         return true;
     }
-
+// RULES → Definir reglas de validación
+    // Conecta con: ProductoController (al guardar/editar productos)
     public function rules(): array
     {
         return [
+            // Nombre obligatorio, texto, máximo 255 caracteres
             'nombre'    => 'required|string|max:255',
+            // Cantidad obligatoria, número entero, no negativo
             'cantidad'  => 'required|integer|min:0',
+            // Precio obligatorio, número, no negativo
             'precio'    => 'required|numeric|min:0',
-
-            // Validación de categoría por nombre
+            // Categoría obligatoria, debe existir en la tabla "categorias"
             'categoria' => [
                 'required',
-                'string',
-                'max:255',
+                'integer',
                 Rule::exists('categorias', 'id'),
             ],
         ];
     }
-
+            // MESSAGES → Mensajes personalizados de error
+            // Se muestran cuando la validación falla
     public function messages(): array
     {
         return [
             'nombre.required'    => 'El nombre es obligatorio.',
             'cantidad.required'  => 'La cantidad es obligatoria.',
             'precio.required'    => 'El precio es obligatorio.',
+            'precio.numeric'     => 'El precio debe ser un número válido.',
             'categoria.required' => 'Debes seleccionar una categoría.',
             'categoria.exists'   => 'La categoría seleccionada no es válida.',
         ];
     }
 
     /**
-     * Normaliza el precio antes de validar
+     * Normalizar datos antes de validar
      */
     protected function prepareForValidation()
     {
-        if ($this->has('precio')) {
-            $valor = (string) $this->input('precio');
-
-            // quitar todo menos dígitos, puntos y comas
-            $valor = preg_replace('/[^\d\.,]/', '', $valor);
-
-            if (str_contains($valor, ',')) {
-                // Formato tipo "1.234.567,89" → quitar puntos, usar coma como decimal
-                $valor = str_replace('.', '', $valor);
-                $valor = str_replace(',', '.', $valor);
-            } else {
-                // Solo puntos, pueden ser miles o decimal
-                if (preg_match('/\.\d{1,2}$/', $valor)) {
-                    // hay decimales → separar parte entera y decimal
-                    $pos = strrpos($valor, '.');
-                    $ent = substr($valor, 0, $pos);
-                    $dec = substr($valor, $pos); // incluye el punto
-                    $ent = str_replace('.', '', $ent);
-                    $valor = $ent.$dec;
-                } else {
-                    // solo separadores de miles → quitarlos
-                    $valor = str_replace('.', '', $valor);
-                }
-            }
-
-            $this->merge([
-                'precio' => $valor,
-            ]);
-        }
+        $this->merge([
+            // Quitar separadores de miles en precio antes de validar
+            'precio' => $this->precio
+                ? (float) str_replace(['.', ','], '', $this->precio)
+                : null,
+        ]);
     }
 }

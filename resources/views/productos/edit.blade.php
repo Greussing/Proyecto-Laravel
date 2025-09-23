@@ -20,6 +20,7 @@
                     </div>
                 @endif
 
+                {{-- Formulario de edición --}}
                 <form action="{{ route('productos.update', $producto->id) }}" method="POST">
                     @csrf
                     @method('PUT')

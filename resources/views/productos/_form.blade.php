@@ -1,6 +1,19 @@
-@csrf
+{{-- 
+|--------------------------------------------------------------------------
+| Formulario de creación / edición de producto (create.blade.php / edit.blade.php)
+|--------------------------------------------------------------------------
+| Este formulario permite crear o actualizar un producto.
+| Conecta con:
+|   - ProductoController@store   → para crear
+|   - ProductoController@update  → para actualizar
+| Usa:
+|   - $producto → objeto producto (solo en edición)
+|   - $categorias → listado de categorías
+|   - @csrf → token de seguridad para POST
+--}}
+@csrf {{-- Token de seguridad obligatorio en formularios POST --}}
 
-{{-- Nombre --}}
+{{-- Nombre del producto --}}
 <div class="mb-4">
     <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
     <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $producto->nombre ?? '') }}"
@@ -10,7 +23,7 @@
     @enderror
 </div>
 
-{{-- Cantidad --}}
+{{-- Cantidad / Stock --}}
 <div class="mb-4">
     <label for="cantidad" class="block text-sm font-medium text-gray-700">Cantidad</label>
     <input type="number" name="cantidad" id="cantidad" min="0"
@@ -36,7 +49,7 @@
         <p class="text-red-600 text-sm">{{ $message }}</p>
     @enderror
 </div>
-
+{{-- Script para formatear precio con separador de miles --}}
 <script>
     const precioInput = document.getElementById('precio');
 
@@ -46,7 +59,7 @@
     }
 
     precioInput.value = formatNumber(precioInput.value);
-
+    // Mientras el usuario escribe
     precioInput.addEventListener('input', function() {
         let cursorPos = this.selectionStart;
         let originalLength = this.value.length;
@@ -55,13 +68,13 @@
         this.selectionEnd = cursorPos + (newLength - originalLength);
     });
 
-    // Antes de enviar, limpiar a número puro
+    // Antes de enviar → dejar solo número puro
     precioInput.form.addEventListener('submit', function() {
         precioInput.value = precioInput.value.replace(/\D/g, '');
     });
 </script>
 
-{{-- Categoría --}}
+{{-- Selección de Categoría --}}
 <div class="mb-4">
     <label for="categoria" class="block text-sm font-medium text-gray-700">Categoría</label>
     @php
@@ -94,7 +107,7 @@
             </ul>
         </div>
     </details>
-
+    {{-- Campo oculto que se envía en el formulario --}}
     <input type="hidden" name="categoria" id="categoria" value="{{ $categoriaSeleccionada }}">
 
     @error('categoria')
@@ -103,6 +116,7 @@
 </div>
 
 <script>
+    // Función auxiliar para seleccionar categoría (opcional)
     function selectCategoria(nombre, element) {
         document.getElementById('categoria').value = nombre;
         document.getElementById('selectedCategoria').textContent = nombre;
@@ -110,7 +124,7 @@
     }
 </script>
 
-{{-- Botones --}}
+{{-- Botones de acción --}}
 <div class="flex justify-end space-x-2">
     <a href="{{ route('productos.index') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
         Atrás
