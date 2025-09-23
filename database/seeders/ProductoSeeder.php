@@ -65,7 +65,7 @@ class ProductoSeeder extends Seeder
             ['nombre' => 'Caja de Herramientas', 'cantidad' => 6, 'precio' => 340000, 'categoria' => 5],
         ];
 
-        foreach ($productos as $producto) {
+        foreach ($productos as $index => $producto) {
             Producto::create($producto);
         }
     }

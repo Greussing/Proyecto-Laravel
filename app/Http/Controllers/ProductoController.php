@@ -68,19 +68,16 @@ class ProductoController extends Controller
     | STORE → guardar producto
     |--------------------------------------------------------------------------
     */
-    public function store(ProductoRequest $request)
-    {
-        $data = $request->validated();
+public function store(ProductoRequest $request)
+{
+    $data = $request->validated();
 
-        // Asignar consecutivo automático
-        $data['consecutivo'] = (Producto::max('consecutivo') ?? 0) + 1;
+    Producto::create($data);
 
-        Producto::create($data);
-
-        return redirect()->route('productos.index')
-            ->with('success', 'Producto creado con éxito.');
-    }
-
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto creado con éxito.');
+}
     /*
     |--------------------------------------------------------------------------
     | EDIT → formulario de edición

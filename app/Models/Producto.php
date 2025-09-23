@@ -4,17 +4,40 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Producto extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'cantidad', 'precio', 'categoria', 'consecutivo'];
+    protected $fillable = ['nombre', 'cantidad', 'precio', 'categoria'];
 
     protected $casts = [
         'precio'   => 'float',
         'cantidad' => 'integer',
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Eventos del modelo → Reordenar IDs al borrar
+    |--------------------------------------------------------------------------
+    */
+    protected static function booted()
+    {
+        static::deleted(function () {
+            self::reordenarIds();
+        });
+    }
+
+    public static function reordenarIds()
+    {
+        // Reordenar los IDs en orden consecutivo
+        DB::statement('SET @count = 0');
+        DB::statement('UPDATE productos SET id = (@count := @count + 1) ORDER BY id');
+
+        // Resetear el AUTO_INCREMENT para que el próximo siga correctamente
+        DB::statement('ALTER TABLE productos AUTO_INCREMENT = 1');
+    }
 
     /*
     |--------------------------------------------------------------------------
