@@ -149,4 +149,9 @@ class Producto extends Model
 
         return (float) $valor;
     }
+
+    public function historiales()
+{
+    return $this->hasMany(Historial::class);
+}
 }

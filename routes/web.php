@@ -2,7 +2,8 @@
 
 // Importamos los controladores y clases necesarias
 use App\Http\Controllers\ProductoController;   // Controlador para manejar productos
-use App\Http\Controllers\ProfileController;    // Controlador para manejar el perfil del usuario
+use App\Http\Controllers\ProfileController;    // Controlador para manejar perfiles de usuario
+use App\Http\Controllers\HistorialController;  // Controlador para manejar historial de productos  
 use Illuminate\Support\Facades\Route;          // Clase de Laravel para definir rutas
 
 /*
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Route;          // Clase de Laravel para definir 
 | Estas rutas se cargan automáticamente por el RouteServiceProvider.
 */
 
+// Historial → HistorialController (vista, exportar PDF/Excel)App\Http\Controllers\HistorialController.php
+Route::get('/historial', [HistorialController::class, 'index'])->name('historial.index');
+Route::get('/historial/export/pdf', [HistorialController::class, 'exportPdf'])->name('historial.export.pdf');
+Route::get('/historial/export/excel', [HistorialController::class, 'exportExcel'])->name('historial.export.excel');
 // Inicio → Welcome (view)resources/views/welcome.blade.php
 Route::get('/', function () {
     return view('welcome');
@@ -31,9 +36,16 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+// Resumen de productos → ProductoController@resumen
+Route::get('/productos/resumen', [ProductoController::class, 'resumen'])->name('productos.resumen');
+
 //Productos → ProductoController (CRUD: index, create, store, edit, update, destroy)App\Http\Controllers\ProductoController.php + vistas resources/views/productos/*
-    Route::resource('productos', ProductoController::class);
+    Route::get('/productos/busqueda', [App\Http\Controllers\ProductoController::class, 'busqueda'])
+    ->name('productos.busqueda');
+
+Route::resource('productos', ProductoController::class);
 });
 
 // Auth → auth.php (login/registro/logout) routes/auth.php (rutas generadas por Laravel Breeze/Jetstream)
 require __DIR__.'/auth.php';
+

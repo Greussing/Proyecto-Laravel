@@ -41,6 +41,64 @@
                                 value="{{ request('search') }}"
                                 class="border rounded pl-9 pr-14 py-1 w-60 md:w-72 focus:ring-2 focus:ring-indigo-500 outline-none"
                                 oninput="toggleSearchIcons(this)">
+                            {{-- Script búsqueda dinámica (AJAX) --}}
+                            <script>
+                                const busquedaUrl = "{{ route('productos.busqueda') }}";
+                            </script>
+
+                            <script>
+                                document.addEventListener('DOMContentLoaded', () => {
+                                    const input = document.querySelector('input[name="search"]');
+                                    const tabla = document.querySelector('table tbody');
+                                    let timeout = null;
+
+                                    input.addEventListener('input', function() {
+                                        clearTimeout(timeout);
+                                        const valor = this.value.trim();
+
+                                        timeout = setTimeout(() => {
+                                            // 🟢 Si se borra todo → recargar página completa (restaura tabla original)
+                                            if (valor === '') {
+                                                window.location.reload();
+                                                return;
+                                            }
+
+                                            // 🔵 Mostrar texto "Buscando..."
+                                            tabla.innerHTML = `
+                    <tr><td colspan="6" class="text-center py-4 text-gray-400">
+                        Buscando...
+                    </td></tr>`;
+
+                                            // 🔍 Petición AJAX con el valor del input
+                                            fetch(busquedaUrl + "?search=" + encodeURIComponent(valor))
+                                                .then(res => res.json())
+                                                .then(data => {
+                                                    tabla.innerHTML = '';
+
+                                                    if (data.length === 0) {
+                                                        tabla.innerHTML = `
+                                <tr><td colspan="6" class="text-center py-4 text-gray-500">
+                                    No se encontraron productos
+                                </td></tr>`;
+                                                        return;
+                                                    }
+
+                                                    data.forEach((p, i) => {
+                                                        tabla.innerHTML += `
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="px-4 py-2">${i + 1}</td>
+                                    <td class="px-4 py-2">${p.nombre}</td>
+                                    <td class="px-4 py-2">${p.categoria_relacion ? p.categoria_relacion.nombre : '-'}</td>
+                                    <td class="px-4 py-2">${p.cantidad}</td>
+                                    <td class="px-4 py-2">Gs. ${Number(p.precio).toLocaleString()}</td>
+                                </tr>`;
+                                                    });
+                                                })
+                                                .catch(err => console.error('Error en búsqueda:', err));
+                                        }, 300);
+                                    });
+                                });
+                            </script>
 
                             <!-- Botón limpiar (×) → elimina el parámetro "search" conservando otros filtros -->
                             <div id="search-icons"
@@ -241,6 +299,44 @@
                         </details>
                     </form>
 
+                    {{-- Historial de movimientos --}}
+                    {{-- Botón Historial de Movimientos --}}
+                    {{-- 🔹 Historial de Movimientos --}}
+                    <details class="relative border rounded px-2 py-1">
+                        <summary
+                            class="cursor-pointer select-none summary-arrow {{ request()->is('historial*') ? 'text-blue-600 font-bold' : '' }}">
+                            Historial de Movimientos
+                            {{-- Si estás en la ruta de historial, muestra botón para limpiar --}}
+                            @if (request()->is('historial*'))
+                                <a href="{{ route('productos.index') }}"
+                                    class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
+                            @endif
+                        </summary>
+
+                        {{-- Menú desplegable --}}
+                        <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
+                            <ul class="space-y-1">
+                                <li>
+                                    <a href="{{ route('historial.index') }}"
+                                        class="block px-2 py-1 hover:bg-gray-100 text-gray-700">
+                                        📋 Ver historial completo
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('historial.export.pdf') }}"
+                                        class="block px-2 py-1 hover:bg-gray-100 text-gray-700">
+                                        🧾 Descargar en PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('historial.export.excel') }}"
+                                        class="block px-2 py-1 hover:bg-gray-100 text-gray-700">
+                                        📊 Exportar a Excel
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </details>
                     <!-- Botón Crear Producto → conecta con productos.create (ProductoController@create + vista create.blade.php) -->
                     <a href="{{ route('productos.create') }}" class="text-gray-500 hover:text-green-600 transition"
                         title="Crear producto">

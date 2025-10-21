@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProductoRequest;
 use App\Models\Categoria;
 use App\Models\Producto;
+use App\Models\Historial;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -51,7 +52,27 @@ class ProductoController extends Controller
             'pageValorTotal'
         ));
     }
+    /*
+    |--------------------------------------------------------------------------
+    | BUSQUEDA → búsqueda AJAX para autocompletar
+    |--------------------------------------------------------------------------
+    */
+    // app/Http/Controllers/ProductoController.php
 
+public function busqueda(Request $request)
+{
+    $termino = $request->input('search');
+
+    $productos = Producto::with('categoriaRelacion')
+        ->when($termino, fn($q) =>
+            $q->where('nombre', 'like', "%{$termino}%")
+        )
+        ->orderBy('nombre')
+        ->take(20)
+        ->get();
+
+    return response()->json($productos);
+}
     /*
     |--------------------------------------------------------------------------
     | CREATE → formulario de nuevo producto
@@ -71,12 +92,15 @@ class ProductoController extends Controller
 public function store(ProductoRequest $request)
 {
     $data = $request->validated();
+    $producto = Producto::create($data);
 
-    Producto::create($data);
+    Historial::create([
+        'producto_id' => $producto->id,
+        'accion' => 'crear',
+        'descripcion' => "Se creó el producto '{$producto->nombre}' con precio de Gs. " . number_format($producto->precio, 0, ',', '.') . ".",
+    ]);
 
-    return redirect()
-        ->route('productos.index')
-        ->with('success', 'Producto creado con éxito.');
+    return redirect()->route('productos.index')->with('success', 'Producto creado con éxito.');
 }
     /*
     |--------------------------------------------------------------------------
@@ -95,13 +119,19 @@ public function store(ProductoRequest $request)
     |--------------------------------------------------------------------------
     */
     public function update(ProductoRequest $request, Producto $producto)
-    {
-        $data = $request->validated();
-        $producto->update($data);
+{
+    $data = $request->validated();
+    $producto->update($data);
 
-        return redirect()->route('productos.index', ['page' => $request->input('page', 1)])
-            ->with('success', 'Producto actualizado con éxito.');
-    }
+    Historial::create([
+        'producto_id' => $producto->id,
+        'accion' => 'editar',
+        'descripcion' => "Se actualizó el producto '{$producto->nombre}' con precio de Gs. " . number_format($producto->precio, 0, ',', '.') . ".",
+    ]);
+
+    return redirect()->route('productos.index', ['page' => $request->input('page', 1)])
+        ->with('success', 'Producto actualizado con éxito.');
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -109,10 +139,31 @@ public function store(ProductoRequest $request)
     |--------------------------------------------------------------------------
     */
     public function destroy(Producto $producto)
-    {
-        $producto->delete();
+{
+    Historial::create([
+        'producto_id' => $producto->id,
+        'accion' => 'eliminar',
+        'descripcion' => "Se eliminó el producto '{$producto->nombre}'.",
+    ]);
 
-        return redirect()->route('productos.index')
-            ->with('success', 'Producto eliminado con éxito.');
-    }
+    $producto->delete();
+
+    return redirect()->route('productos.index')
+        ->with('success', 'Producto eliminado con éxito.');
+}
+
+public function resumen()
+{
+    $total = \App\Models\Producto::count();
+    $agotados = \App\Models\Producto::where('cantidad', 0)->count();
+    $bajoStock = \App\Models\Producto::where('cantidad', '<', 5)->count();
+    $promedioPrecio = \App\Models\Producto::avg('precio');
+
+    return response()->json([
+        'total_productos' => $total,
+        'agotados' => $agotados,
+        'bajo_stock' => $bajoStock,
+        'promedio_precio' => round($promedioPrecio, 0),
+    ]);
+}
 }
