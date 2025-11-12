@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             CategoriaSeeder::class,
             UserSeeder::class,
             ProductoSeeder::class,
+            ClienteSeeder::class,
         ]);
 
         // 🔓 Volver a activar las claves foráneas

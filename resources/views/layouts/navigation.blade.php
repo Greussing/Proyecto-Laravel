@@ -23,6 +23,12 @@
                         {{ __('Productos') }}
                     </x-nav-link>
                 </div>
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')"
+                        class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400">
+                        {{ __('Ventas') }}
+                    </x-nav-link>
+                </div>
             </div>
 
             <!-- Settings Dropdown -->
@@ -99,6 +105,11 @@
             <x-responsive-nav-link :href="route('productos.index')" :active="request()->routeIs('productos.*')"
                 class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400">
                 {{ __('Productos') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')"
+                class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400">
+                {{ __('Ventas') }}
             </x-responsive-nav-link>
         </div>
 

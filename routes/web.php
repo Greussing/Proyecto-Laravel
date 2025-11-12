@@ -4,6 +4,7 @@
 use App\Http\Controllers\ProductoController;   // Controlador para manejar productos
 use App\Http\Controllers\ProfileController;    // Controlador para manejar perfiles de usuario
 use App\Http\Controllers\HistorialController;  // Controlador para manejar historial de productos  
+use App\Http\Controllers\VentaController;        // Controlador para manejar ventas
 use Illuminate\Support\Facades\Route;          // Clase de Laravel para definir rutas
 
 /*
@@ -15,10 +16,14 @@ use Illuminate\Support\Facades\Route;          // Clase de Laravel para definir 
 | Estas rutas se cargan automáticamente por el RouteServiceProvider.
 */
 
+// Ventas → VentaController (CRUD: index, create, store, show, edit, update, destroy)App\Http\Controllers\VentaController.php
+Route::resource('ventas', VentaController::class);
+
 // Historial → HistorialController (vista, exportar PDF/Excel)App\Http\Controllers\HistorialController.php
 Route::get('/historial', [HistorialController::class, 'index'])->name('historial.index');
 Route::get('/historial/export/pdf', [HistorialController::class, 'exportPdf'])->name('historial.export.pdf');
 Route::get('/historial/export/excel', [HistorialController::class, 'exportExcel'])->name('historial.export.excel');
+
 // Inicio → Welcome (view)resources/views/welcome.blade.php
 Route::get('/', function () {
     return view('welcome');
