@@ -22,33 +22,43 @@ class Venta extends Model
         'fecha' => 'datetime',
     ];
 
-    // Relación: una venta pertenece a un usuario (vendedor)
+    /**
+     * Relación con el usuario (vendedor)
+     */
     public function usuarioRelacion()
     {
         return $this->belongsTo(User::class, 'usuario', 'id');
     }
 
-    // Relación: una venta pertenece a un cliente
+    /**
+     * Relación con el cliente
+     * Columna REAL en BD = 'cliente'
+     */
     public function clienteRelacion()
     {
         return $this->belongsTo(Cliente::class, 'cliente', 'id');
     }
 
-    // Relación: obtener el producto a través del detalle de venta
-    public function productoRelacion()
-{
-    return $this->hasOneThrough(
-        Producto::class,        // Modelo final (producto)
-        DetalleVenta::class,    // Modelo intermedio (detalle)
-        'venta_id',             // FK en detalles
-        'id',                   // FK en productos
-        'id',                   // Local key en ventas
-        'producto_id'           // FK en detalles que apunta a productos
-    );
-}
-    // Relación: detalles de venta
+    /**
+     * Relación: detalles de la venta
+     */
     public function detalles()
     {
-        return $this->hasMany(DetalleVenta::class);
+        return $this->hasMany(DetalleVenta::class, 'venta_id');
+    }
+
+    /**
+     * Producto relacionado a través del detalle (cuando solo hay uno)
+     */
+    public function productoRelacion()
+    {
+        return $this->hasOneThrough(
+            Producto::class,        // Modelo final
+            DetalleVenta::class,    // Modelo intermedio
+            'venta_id',             // FK en detalle_ventas
+            'id',                   // PK en productos
+            'id',                   // PK en ventas
+            'producto_id'           // FK en detalles
+        );
     }
 }

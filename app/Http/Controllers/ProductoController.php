@@ -8,6 +8,7 @@ use App\Models\Producto;
 use App\Models\Historial;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class ProductoController extends Controller
 {
@@ -85,85 +86,150 @@ public function busqueda(Request $request)
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | STORE → guardar producto
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| STORE → guardar producto
+|--------------------------------------------------------------------------
+*/
 public function store(ProductoRequest $request)
 {
     $data = $request->validated();
+
+    // Crear producto
     $producto = Producto::create($data);
 
+    // Cargar relación de categoría para mostrar el nombre
+    $producto->load('categoriaRelacion');
+
+    // Formateos y textos
+    $precioFormateado = 'Gs. ' . number_format($producto->precio, 0, ',', '.');
+    $categoriaNombre  = $producto->categoriaRelacion->nombre ?? 'Sin categoría';
+    $cantidadInicial  = $producto->cantidad;
+
+    // 📝 Descripción estilo humano / natural
+    $descripcion = "Se agregó el producto '{$producto->nombre}'. "
+        . "Pertenece a la categoría {$categoriaNombre}. "
+        . "Inicia con {$cantidadInicial} unidades y un precio de {$precioFormateado}.";
+
+    // Registrar en historial
     Historial::create([
         'producto_id' => $producto->id,
-        'accion' => 'crear',
-        'descripcion' => "Se creó el producto '{$producto->nombre}' con precio de Gs. " . number_format($producto->precio, 0, ',', '.') . ".",
+        'user_id'     => auth()->id(),
+        'accion'      => 'crear',
+        'descripcion' => $descripcion,
     ]);
 
-    return redirect()->route('productos.index')->with('success', 'Producto creado con éxito.');
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto creado con éxito.');
 }
-    /*
-    |--------------------------------------------------------------------------
-    | EDIT → formulario de edición
-    |--------------------------------------------------------------------------
-    */
-    public function edit(Producto $producto)
-    {
-        $categorias = Categoria::all();
-        return view('productos.edit', compact('producto', 'categorias'));
-    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE → actualizar producto
-    |--------------------------------------------------------------------------
-    */
-    public function update(ProductoRequest $request, Producto $producto)
+/*
+|--------------------------------------------------------------------------
+| EDIT → formulario de edición
+|--------------------------------------------------------------------------
+*/
+public function edit(Producto $producto)
+{
+    $categorias = Categoria::all();
+    return view('productos.edit', compact('producto', 'categorias'));
+}
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE → actualizar producto
+|--------------------------------------------------------------------------
+*/
+public function update(ProductoRequest $request, Producto $producto)
 {
     $data = $request->validated();
+
+    // Valores antes de actualizar
+    $antes = $producto->getOriginal();
+
+    // Actualizamos
     $producto->update($data);
 
+    // Relación de categoría ya actualizada
+    $producto->load('categoriaRelacion');
+
+    $cambios = [];
+
+    foreach ($data as $campo => $valorNuevo) {
+        $valorAnterior = $antes[$campo] ?? null;
+
+        if ($valorAnterior != $valorNuevo) {
+
+            // Formato especial para precio
+            if ($campo === 'precio') {
+                $valorAnterior = 'Gs. ' . number_format($valorAnterior, 0, ',', '.');
+                $valorNuevo    = 'Gs. ' . number_format($valorNuevo, 0, ',', '.');
+                $labelCampo    = 'Precio';
+            }
+            // Formato especial para categoría (mostrar nombres)
+            elseif ($campo === 'categoria') {
+                $catAntes = Categoria::find($valorAnterior);
+                $catNueva = Categoria::find($valorNuevo);
+
+                $valorAnterior = $catAntes->nombre ?? 'Sin categoría';
+                $valorNuevo    = $catNueva->nombre ?? 'Sin categoría';
+                $labelCampo    = 'Categoría';
+            }
+            // Otros campos (nombre, cantidad, fecha_vencimiento, lote, etc.)
+            else {
+                $labelCampo = ucfirst(str_replace('_', ' ', $campo));
+            }
+
+            $cambios[] = "{$labelCampo}: {$valorAnterior} → {$valorNuevo}";
+        }
+    }
+
+    // 📝 Descripción estilo humano / natural
+    $descripcion = "Se actualizó el producto '{$producto->nombre}'.";
+    if (!empty($cambios)) {
+        $descripcion .= " Cambios realizados: " . implode("; ", $cambios);
+    }
+
+    // Guardar en historial
     Historial::create([
         'producto_id' => $producto->id,
-        'accion' => 'editar',
-        'descripcion' => "Se actualizó el producto '{$producto->nombre}' con precio de Gs. " . number_format($producto->precio, 0, ',', '.') . ".",
+        'user_id'     => auth()->id(),
+        'accion'      => 'editar',
+        'descripcion' => $descripcion,
     ]);
 
-    return redirect()->route('productos.index', ['page' => $request->input('page', 1)])
+    return redirect()
+        ->route('productos.index', ['page' => $request->input('page', 1)])
         ->with('success', 'Producto actualizado con éxito.');
 }
 
-    /*
-    |--------------------------------------------------------------------------
-    | DESTROY → eliminar producto
-    |--------------------------------------------------------------------------
-    */
-    public function destroy(Producto $producto)
+/*
+|--------------------------------------------------------------------------
+| DESTROY → eliminar producto
+|--------------------------------------------------------------------------
+*/
+public function destroy(Producto $producto)
 {
+    // Cargamos categoría antes de borrar para poder registrarla
+    $producto->load('categoriaRelacion');
+
+    $categoriaNombre = $producto->categoriaRelacion->nombre ?? 'Sin categoría';
+
+    // 📝 Descripción estilo humano / natural
+    $descripcion = "Se eliminó el producto '{$producto->nombre}' "
+        . "de la categoría {$categoriaNombre}.";
+
     Historial::create([
         'producto_id' => $producto->id,
-        'accion' => 'eliminar',
-        'descripcion' => "Se eliminó el producto '{$producto->nombre}'.",
+        'user_id'     => auth()->id(),
+        'accion'      => 'eliminar',
+        'descripcion' => $descripcion,
+
     ]);
 
     $producto->delete();
 
-    return redirect()->route('productos.index')
+    return redirect()
+        ->route('productos.index')
         ->with('success', 'Producto eliminado con éxito.');
-}
-
-public function resumen()
-{
-    $total = \App\Models\Producto::count();
-    $agotados = \App\Models\Producto::where('cantidad', 0)->count();
-    $bajoStock = \App\Models\Producto::where('cantidad', '<', 5)->count();
-    $promedioPrecio = \App\Models\Producto::avg('precio');
-
-    return response()->json([
-        'total_productos' => $total,
-        'agotados' => $agotados,
-        'bajo_stock' => $bajoStock,
-        'promedio_precio' => round($promedioPrecio, 0),
-    ]);
 }
 }

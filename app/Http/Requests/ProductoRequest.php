@@ -15,22 +15,20 @@ class ProductoRequest extends FormRequest
 // RULES → Definir reglas de validación
     // Conecta con: ProductoController (al guardar/editar productos)
     public function rules(): array
-    {
-        return [
-            // Nombre obligatorio, texto, máximo 255 caracteres
-            'nombre'    => 'required|string|max:255',
-            // Cantidad obligatoria, número entero, no negativo
-            'cantidad'  => 'required|integer|min:0',
-            // Precio obligatorio, número, no negativo
-            'precio'    => 'required|numeric|min:0',
-            // Categoría obligatoria, debe existir en la tabla "categorias"
-            'categoria' => [
-                'required',
-                'integer',
-                Rule::exists('categorias', 'id'),
-            ],
-        ];
-    }
+{
+    return [
+        'nombre'    => 'required|string|max:255',
+        'cantidad'  => 'required|integer|min:0',
+        'precio'    => 'required|numeric|min:0',
+        'categoria' => [
+            'required',
+            'integer',
+            Rule::exists('categorias', 'id'),
+        ],
+        'fecha_vencimiento' => 'nullable|date',
+        'lote'              => 'nullable|string|max:50',
+    ];
+}
             // MESSAGES → Mensajes personalizados de error
             // Se muestran cuando la validación falla
     public function messages(): array

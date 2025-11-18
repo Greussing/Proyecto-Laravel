@@ -5,39 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Producto extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['nombre', 'cantidad', 'precio', 'categoria'];
+    protected $fillable = ['nombre', 'cantidad', 'precio', 'categoria', 'fecha_vencimiento', 'lote'];
 
-    protected $casts = [
-        'precio'   => 'float',
-        'cantidad' => 'integer',
-    ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Eventos del modelo → Reordenar IDs al borrar
-    |--------------------------------------------------------------------------
-    */
-    protected static function booted()
-    {
-        static::deleted(function () {
-            self::reordenarIds();
-        });
-    }
-
-    public static function reordenarIds()
-    {
-        // Reordenar los IDs en orden consecutivo
-        DB::statement('SET @count = 0');
-        DB::statement('UPDATE productos SET id = (@count := @count + 1) ORDER BY id');
-
-        // Resetear el AUTO_INCREMENT para que el próximo siga correctamente
-        DB::statement('ALTER TABLE productos AUTO_INCREMENT = 1');
-    }
+protected $casts = [
+    'precio'            => 'float',
+    'cantidad'          => 'integer',
+    'fecha_vencimiento' => 'date',
+];
 
     /*
     |--------------------------------------------------------------------------
@@ -150,8 +130,77 @@ class Producto extends Model
         return (float) $valor;
     }
 
+    // Relaciones con otros modelos
     public function historiales()
 {
     return $this->hasMany(Historial::class);
+}
+
+// Relación con movimientos de stock
+public function movimientosStock()
+{
+    return $this->hasMany(MovimientoStock::class);
+}
+
+/*
+    |--------------------------------------------------------------------------
+    | Caducidad: helpers
+    |--------------------------------------------------------------------------
+    */
+
+    public function getDiasRestantesAttribute(): ?int
+    {
+        if (!$this->fecha_vencimiento) {
+            return null;
+        }
+
+        // diffInDays con false para permitir negativos (vencidos)
+        return now()->startOfDay()->diffInDays($this->fecha_vencimiento, false);
+    }
+
+    public function getEstadoVencimientoAttribute(): string
+    {
+        if (!$this->fecha_vencimiento) {
+            return 'sin_fecha';
+        }
+
+        $dias = $this->dias_restantes;
+
+        return match (true) {
+            $dias < 0    => 'vencido',
+            $dias <= 15  => 'critico',
+            $dias <= 30  => 'proximo',
+            $dias <= 60  => 'revisar',
+            default      => 'ok',
+        };
+    }
+
+    protected static function booted()
+{
+    static::created(function ($producto) {
+
+        // Detectar si viene del seeder
+        $esSeeder = app()->runningInConsole() && !app()->runningUnitTests();
+
+        // Usuario para historial
+        $usuario = $esSeeder
+            ? 'Sistema (Seeder)'
+            : (auth()->user()->name ?? 'Sistema');
+
+        // Obtener datos
+        $categoria = $producto->categoriaRelacion->nombre ?? 'Sin categoría';
+        $precio = 'Gs. ' . number_format($producto->precio, 0, ',', '.');
+
+        // Registrar historial
+        \App\Models\Historial::create([
+            'producto_id' => $producto->id,
+            'accion'      => 'crear',
+            'descripcion' => "Se agregó el producto '{$producto->nombre}.' "
+                            . "Pertenece a la categoría {$categoria}. "
+                            . "Inicia con {$producto->cantidad} unidades "
+                            . "y un precio de {$precio}.",
+            'user_id'     => null, // Seeder no tiene ID
+        ]);
+    });
 }
 }

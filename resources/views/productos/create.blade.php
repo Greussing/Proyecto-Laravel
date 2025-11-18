@@ -23,6 +23,7 @@
                 {{-- Formulario de creación --}}
                 <form action="{{ route('productos.store') }}" method="POST">
                     @csrf
+
                     @include('productos._form', ['categorias' => $categorias])
                 </form>
             </div>

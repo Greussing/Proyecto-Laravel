@@ -23,7 +23,11 @@ class DatabaseSeeder extends Seeder
             ClienteSeeder::class,
         ]);
 
-        // 🔓 Volver a activar las claves foráneas
-        Schema::enableForeignKeyConstraints();
+         // Solo demo en local
+    if (app()->environment('local')) {
+        $this->call(VentaSeeder::class);
     }
+        // 🔓 Reactivar claves foráneas
+    Schema::enableForeignKeyConstraints();
+}
 }

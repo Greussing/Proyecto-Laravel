@@ -299,9 +299,45 @@
                         </details>
                     </form>
 
+                    {{-- Control de caducidad --}}
+<details class="relative border rounded px-2 py-1">
+                        <summary
+                            class="cursor-pointer select-none summary-arrow {{ request()->is('caducidad*') ? 'text-blue-600 font-bold' : '' }}">
+                            Control de Caducidad
+                            {{-- Si estás en la ruta de , muestra botón para limpiar --}}
+                            @if (request()->is('caducidad*'))
+                                <a href="{{ route('productos.index') }}"
+                                    class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
+                            @endif
+                        </summary>
+
+                        {{-- Menú desplegable --}}
+                        <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
+                            <ul class="space-y-1">
+                                <li>
+                                    <a href="{{ route('caducidad.index') }}"
+                                        class="block px-2 py-1 hover:bg-gray-100 text-gray-700">
+                                        📋 Ver control de vencimientos 
+                                    </a>
+                                </li>
+                <li>
+                                    <a href="{{ route('caducidad.export.pdf') }}"
+                                        class="block px-2 py-1 hover:bg-gray-100 text-gray-700">
+                                        🧾 Descargar en PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('caducidad.export.excel') }}"
+                                        class="block px-2 py-1 hover:bg-gray-100 text-gray-700">
+                                        📊 Exportar a Excel
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </details>
+
                     {{-- Historial de movimientos --}}
                     {{-- Botón Historial de Movimientos --}}
-                    {{-- 🔹 Historial de Movimientos --}}
                     <details class="relative border rounded px-2 py-1">
                         <summary
                             class="cursor-pointer select-none summary-arrow {{ request()->is('historial*') ? 'text-blue-600 font-bold' : '' }}">
@@ -378,45 +414,33 @@
                     });
                 </script>
 
-                {{-- 
-|--------------------------------------------------------------------------
-| Tabla de productos (index.blade.php)
-|--------------------------------------------------------------------------
-| Este archivo muestra todos los productos en una tabla.
-| Conecta con:
-|   - ProductoController@index → carga los productos
-|   - ProductoController@edit  → editar producto
-|   - ProductoController@destroy → eliminar producto
-| Usa:
-|   - $productos → listado paginado
-|   - $pageStockTotal → stock total mostrado en la página
-|   - $pageValorTotal → valor total mostrado en la página
---}}
                 {{-- Si no hay productos --}}
                 @if ($productos->isEmpty())
-                    <p class="text-gray-600">No hay productos registrados.</p>
+                    <p class="p-4 text-center text-gray-500">
+                        No hay productos registrados.
+                    </p>
                 @else
                     {{-- Tabla principal --}}
-                    <table class="min-w-full border border-gray-200">
+                    <table class="min-w-full border border-gray-200 rounded">
                         <thead class="bg-gray-100">
                             <tr>
                                 {{-- Encabezados de la tabla --}}
-                                <th class="px-4 py-2 border">Id</th>
+                                <th class="px-4 py-2 border text-center">ID</th>
                                 <th class="px-4 py-2 border">Nombre</th>
                                 <th class="px-4 py-2 border">Categoría</th>
-                                <th class="px-4 py-2 border">Cantidad</th>
-                                <th class="px-4 py-2 border">Precio</th>
-                                <th class="px-4 py-2 border">Acciones</th>
+                                <th class="px-4 py-2 border text-center">Cantidad</th>
+                                <th class="px-4 py-2 border text-right">Precio</th>
+                                <th class="px-4 py-2 border text-center">Acciones</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             {{-- Recorremos todos los productos --}}
                             @foreach ($productos as $producto)
-                                {{-- Fila con color rojo si el stock es menor a 5 --}}
-                                <tr class="{{ $producto->cantidad < 5 ? 'bg-red-100' : '' }}">
+                                <tr class="hover:bg-gray-50" x-data="{ open: false }">
 
                                     {{-- Id --}}
-                                    <td class="px-4 py-2 border">
+                                    <td class="px-4 py-2 border text-gray-700 font-medium text-center">
                                         {{ $producto->id }}
                                     </td>
 
@@ -428,72 +452,83 @@
                                     {{-- Categoría --}}
                                     <td class="px-4 py-2 border">
                                         @php
-                                            // Colores personalizados para cada categoría
                                             $colores = [
-                                                'Electrónica' => 'text-indigo-700 font-bold',
-                                                'Alimentos' => 'text-green-700 font-bold',
-                                                'Ropa' => 'text-orange-700 font-bold',
-                                                'Accesorios' => 'text-purple-700 font-bold',
-                                                'Herramientas' => 'text-teal-700 font-bold',
+                                                'Electrónica' => 'bg-indigo-100 text-indigo-700',
+                                                'Alimentos' => 'bg-green-100 text-green-700',
+                                                'Ropa' => 'bg-orange-100 text-orange-700',
+                                                'Accesorios' => 'bg-purple-100 text-purple-700',
+                                                'Herramientas' => 'bg-teal-100 text-teal-700',
                                             ];
-                                            // Obtenemos nombre de categoría desde la relación en el modelo
-                                            $nombreCategoria = $producto->categoriaRelacion
-                                                ? $producto->categoriaRelacion->nombre
-                                                : 'Sin Categoría';
-                                            // Seleccionamos color según categoría
-                                            $color = $colores[$nombreCategoria] ?? 'text-gray-700 font-bold';
+
+                                            $nombreCategoria = $producto->categoriaRelacion->nombre ?? 'Sin Categoría';
+
+                                            $color = $colores[$nombreCategoria] ?? 'bg-gray-100 text-gray-700';
                                         @endphp
 
-                                        <span class="{{ $color }}">
+                                        <span class="px-2 py-1 rounded text-sm font-medium {{ $color }}">
                                             {{ $nombreCategoria }}
                                         </span>
                                     </td>
 
-                                    {{-- Cantidad (condiciones de stock) --}}
-                                    <td class="px-4 py-2">
-                                        @if ($producto->cantidad == 0)
-                                            <span class="text-red-600 font-bold">Agotado</span>
-                                        @elseif ($producto->cantidad <= 0)
-                                            <span class="text-red-600 font-bold">{{ $producto->cantidad }}</span>
-                                        @elseif ($producto->cantidad <= 10)
-                                            <span class="text-yellow-600 font-bold">{{ $producto->cantidad }}</span>
-                                        @elseif ($producto->cantidad >= 11)
-                                            <span class="text-green-600 font-bold">{{ $producto->cantidad }}</span>
-                                        @endif
+                                    {{-- Cantidad --}}
+                                    <td class="px-4 py-2 border text-center font-semibold text-gray-800">
+                                        @php
+                                            if ($producto->cantidad == 0) {
+                                                $texto = 'Agotado';
+                                                $clase = 'bg-red-100 text-red-700';
+                                            } elseif ($producto->cantidad <= 5) {
+                                                $texto = $producto->cantidad;
+                                                $clase = 'bg-red-100 text-red-700';
+                                            } elseif ($producto->cantidad <= 10) {
+                                                $texto = $producto->cantidad;
+                                                $clase = 'bg-yellow-100 text-yellow-700';
+                                            } else {
+                                                $texto = $producto->cantidad;
+                                                $clase = 'bg-green-100 text-green-700';
+                                            }
+                                        @endphp
+
+                                        <span class="px-2 py-1 rounded text-sm font-medium {{ $clase }}">
+                                            {{ $texto }}
+                                        </span>
                                     </td>
 
-                                    {{-- Precio formateado con separador de miles --}}
-                                    <td class="px-4 py-2 border">
+                                    {{-- Precio --}}
+                                    <td class="px-4 py-2 border text-right font-bold text-blue-700">
                                         Gs. {{ number_format($producto->precio, 0, ',', '.') }}
                                     </td>
 
+                                    {{-- Acciones --}}
+                                    <td class="px-4 py-2 border text-center">
+                                        <div class="flex flex-col items-center gap-2">
 
-                                    {{-- Acciones: Editar y Eliminar --}}
-                                    <td class="px-4 py-2 border flex items-center gap-3" x-data="{ open: false }">
-                                        {{-- x-data="{ open: false }" → controla la visibilidad del modal de confirmación --}}
+                                            {{-- Editar --}}
+                                            <a href="{{ route('productos.edit', $producto->id) }}"
+                                                class="text-gray-500 hover:text-blue-600 transition" title="Editar">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                    stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M16.862 4.487l1.651 1.651a2 2 0 010 2.828l-8.486 8.486a2 2 0 01-.878.505l-3.722.931a.5.5 0 01-.606-.606l.93-3.722a2 2 0 01.506-.878l8.485-8.486a2 2 0 012.828 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19 20H5" />
+                                                </svg>
+                                            </a>
 
-                                        {{-- Botón Editar → conecta con ProductoController@edit --}}
-                                        <a href="{{ route('productos.edit', $producto->id) }}"
-                                            class="text-gray-500 hover:text-blue-600 transition" title="Editar">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M16.862 4.487l1.651 1.651a2 2 0 010 2.828l-8.486 8.486a2 2 0 01-.878.505l-3.722.931a.5.5 0 01-.606-.606l.93-3.722a2 2 0 01.506-.878l8.485-8.486a2 2 0 012.828 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5" />
-                                            </svg>
-                                        </a>
+                                            {{-- Eliminar --}}
+                                            <button @click="open = true"
+                                                class="text-red-600 hover:text-red-800 transition" title="Eliminar">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                    stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
+                                                </svg>
+                                            </button>
 
-                                        {{-- Botón Eliminar → abre modal de confirmación --}}
-                                        <button @click="open = true"
-                                            class="text-red-600 hover:text-red-800 transition" title="Eliminar">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
-                                            </svg>
-                                        </button>
+                                        </div>
 
-                                        {{-- Modal de confirmación antes de eliminar --}}
+                                        {{-- Modal de confirmación por producto --}}
                                         <div x-show="open" x-cloak
                                             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                                             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-96">
@@ -501,18 +536,18 @@
                                                     ⚠️ Confirmar eliminación
                                                 </h2>
                                                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                                    ¿Seguro que quieres eliminar este producto? Esta acción no se
-                                                    puede
-                                                    deshacer.
+                                                    ¿Seguro que quieres eliminar este producto?
+                                                    Esta acción no se puede deshacer.
                                                 </p>
-                                                {{-- Botones del modal --}}
+
                                                 <div class="mt-4 flex justify-end gap-3">
                                                     {{-- Cancelar --}}
                                                     <button @click="open = false"
                                                         class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
                                                         ❌ Cancelar
                                                     </button>
-                                                    {{-- Confirmar → conecta con ProductoController@destroy --}}
+
+                                                    {{-- Confirmar --}}
                                                     <form action="{{ route('productos.destroy', $producto->id) }}"
                                                         method="POST">
                                                         @csrf
@@ -525,75 +560,72 @@
                                                 </div>
                                             </div>
                                         </div>
+
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
+                @endif
 
-                    {{-- Resumen + paginación --}}
-                    <div
-                        class="mt-4 p-3 bg-gray-50 rounded-lg shadow-sm flex justify-between items-start text-sm text-gray-700">
+                {{-- Resumen + paginación --}}
+                <div
+                    class="mt-4 p-3 bg-gray-50 rounded-lg shadow-sm flex justify-between items-start text-sm text-gray-700">
 
-                        {{-- Columna izquierda: información de la página actual --}}
-                        <div class="flex flex-col gap-1">
-                            <div>
-                                Mostrando
-                                <span class="font-bold">{{ $productos->firstItem() }}</span>
-                                a
-                                <span class="font-bold">{{ $productos->lastItem() }}</span>
-                                de
-                                <span class="font-bold">{{ $productos->total() }}</span>
-                                resultados
-                            </div>
-
-                            <div class="flex items-center gap-1">
-                                📦 <span>Stock total mostrado:
-                                    <span class="font-bold">{{ $pageStockTotal }}</span>
-                                    unidades
-                                </span>
-                            </div>
-
-                            <div class="flex items-center gap-1">
-                                💰 <span>Valor total mostrado:
-                                    <span class="font-bold">
-                                        Gs. {{ number_format($pageValorTotal, 0, ',', '.') }}
-                                    </span>
-                                </span>
-                            </div>
+                    {{-- Columna izquierda: información de la página actual --}}
+                    <div class="flex flex-col gap-1">
+                        <div>
+                            Mostrando
+                            <span class="font-bold">{{ $productos->firstItem() }}</span>
+                            a
+                            <span class="font-bold">{{ $productos->lastItem() }}</span>
+                            de
+                            <span class="font-bold">{{ $productos->total() }}</span>
+                            resultados
                         </div>
 
-                        {{-- Columna derecha: botones de paginación --}}
-                        <div class="flex items-center">
-                            {{ $productos->links() }}
+                        <div class="flex items-center gap-1">
+                            📦 <span>Stock total mostrado:
+                                <span class="font-bold">{{ $pageStockTotal }}</span>
+                                unidades
+                            </span>
+                        </div>
 
-                            {{-- Botón para volver al modo paginado si se usó "verTodo" --}}
-                            @if (request()->has('verTodo'))
-                                @php
-                                    $q = request()->query();
-                                    unset($q['verTodo']); // quitamos el parámetro verTodo
-                                    $urlSinVerTodo = request()->url() . (empty($q) ? '' : '?' . http_build_query($q));
-                                @endphp
+                        <div class="flex items-center gap-1">
+                            💰 <span>Valor total mostrado:
+                                <span class="font-bold">
+                                    Gs. {{ number_format($pageValorTotal, 0, ',', '.') }}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
 
-                                <a href="{{ $urlSinVerTodo }}"
-                                    class="ml-2 relative inline-flex items-center px-3 py-2 text-sm font-medium 
+                    {{-- Columna derecha: botones de paginación --}}
+                    <div class="flex items-center">
+                        {{ $productos->links() }}
+
+                        {{-- Botón para volver al modo paginado si se usó "verTodo" --}}
+                        @if (request()->has('verTodo'))
+                            @php
+                                $q = request()->query();
+                                unset($q['verTodo']); // quitamos el parámetro verTodo
+                                $urlSinVerTodo = request()->url() . (empty($q) ? '' : '?' . http_build_query($q));
+                            @endphp
+
+                            <a href="{{ $urlSinVerTodo }}"
+                                class="ml-2 relative inline-flex items-center px-3 py-2 text-sm font-medium 
                    text-gray-700 bg-white border border-gray-300 leading-5 
                    hover:text-gray-500 focus:z-10 focus:outline-none focus:ring ring-gray-300 
                    focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition 
                    ease-in-out duration-150 dark:bg-gray-800 dark:border-gray-600 
                    dark:text-gray-400 dark:hover:text-gray-300 dark:active:bg-gray-700 
                    dark:focus:border-blue-800 rounded-md">
-                                    Ver paginado
-                                </a>
-                            @endif
-                        </div>
-                    </div>
-            </div>
-        </div>
+                                Ver paginado
+                           </a>
+        @endif
     </div>
-    </div>
-    @endif
-    </div>
-    </div>
-    </div>
+</div>
+</div> {{-- cierra tarjeta principal --}}
+</div> {{-- cierra max-w-7xl --}}
+</div> {{-- cierra py-6 --}}
 </x-app-layout>
