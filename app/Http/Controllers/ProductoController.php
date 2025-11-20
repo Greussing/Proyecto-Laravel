@@ -12,37 +12,47 @@ use Illuminate\Support\Facades\Auth;
 
 class ProductoController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Producto::class, 'producto');
+    }
     /*
     |--------------------------------------------------------------------------
     | INDEX → lista de productos con filtros, orden y paginación
     |--------------------------------------------------------------------------
     */
+    /**
+     * INDEX → lista de productos con filtros, orden y paginación
+     */
     public function index(Request $request)
     {
-        // Traer productos filtrados
-        $productosTodos = Producto::with('categoriaRelacion')->filter($request)->get();
+        // Query base con scopes encadenados
+        $query = Producto::with('categoriaRelacion')
+            ->buscar($request->input('search'))
+            ->filtrarPorCategorias($request->input('categorias') ?? $request->input('categoria'))
+            ->filtrarPorPrecio($request->input('precio_min'), $request->input('precio_max'))
+            ->filtrarPorStock($request->input('stock'))
+            ->ordenar($request->input('ordenar'));
 
-        // Numeración consecutiva global
-        $productosTodos->each(fn ($producto, $i) => $producto->numero_fijo = $i + 1);
-
-        // Paginación y "ver todo"
-        $pagina    = $request->get('page', 1);
+        // Clonar query para cálculos de totales de la página actual (si se quisiera total global, quitar paginación antes)
+        // Nota: En el código original, los totales eran de la "página actual". 
+        // Para mantener eso, primero paginamos.
+        
         $verTodo   = $request->boolean('verTodo');
-        $porPagina = $verTodo ? $productosTodos->count() : 10;
+        $porPagina = $verTodo ? $query->count() : 10;
+        
+        // Evitar división por cero si no hay productos
+        $porPagina = $porPagina > 0 ? $porPagina : 10;
 
-        $productosPagina = $productosTodos->forPage($pagina, $porPagina);
+        $productos = $query->paginate($porPagina)->withQueryString();
 
-        $productos = new LengthAwarePaginator(
-            $productosPagina,
-            $productosTodos->count(),
-            $porPagina,
-            $pagina,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        // Totales de stock y valor de la página actual
-        $pageStockTotal = $productosPagina->sum('cantidad');
-        $pageValorTotal = $productosPagina->sum(fn($p) => $p->cantidad * $p->precio);
+        // Numeración consecutiva global (calculada en vista o aquí)
+        // El original usaba un loop sobre todos los productos para poner numero_fijo, lo cual es ineficiente si hay muchos.
+        // Lo ideal es calcularlo en la vista: ($productos->currentPage() - 1) * $productos->perPage() + $loop->iteration
+        
+        // Totales de la página actual
+        $pageStockTotal = $productos->sum('cantidad');
+        $pageValorTotal = $productos->sum(fn($p) => $p->cantidad * $p->precio);
 
         $categorias = Categoria::all();
 
