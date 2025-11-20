@@ -34,47 +34,78 @@ protected $casts = [
     | Scope → filtros dinámicos
     |--------------------------------------------------------------------------
     */
-    public function scopeFilter($query, $filters)
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes (Filtros)
+    |--------------------------------------------------------------------------
+    */
+    public function scopeBuscar($query, ?string $termino)
     {
-        // Normalizar valores de precio mínimo y máximo
-        $precioMin = isset($filters['precio_min'])
-            ? $this->parsePrecio($filters['precio_min'])
-            : null;
+        return $query->when($termino, fn($q) => $q->where('nombre', 'like', "%{$termino}%"));
+    }
 
-        $precioMax = isset($filters['precio_max'])
-            ? $this->parsePrecio($filters['precio_max'])
-            : null;
+    public function scopeFiltrarPorCategorias($query, $categorias)
+    {
+        if (empty($categorias)) {
+            return $query;
+        }
+        // Maneja tanto array como string único
+        return $query->whereIn('categoria', (array) $categorias);
+    }
+
+    public function scopeFiltrarPorPrecio($query, $min, $max)
+    {
+        $precioMin = $this->parsePrecio($min);
+        $precioMax = $this->parsePrecio($max);
 
         return $query
-            ->when($filters['search'] ?? null, fn($q, $search) =>
-                $q->where('nombre', 'like', '%'.$search.'%')
-            )
-            ->when(!empty($filters['categorias']) || !empty($filters['categoria']), function ($q) use ($filters) {
-                $cats = $filters['categorias'] ?? [$filters['categoria']];
-                $q->whereIn('categoria', (array) $cats);
-            })
             ->when($precioMin !== null, fn($q) => $q->where('precio', '>=', $precioMin))
-            ->when($precioMax !== null, fn($q) => $q->where('precio', '<=', $precioMax))
-            ->when($filters['stock'] ?? null, function ($q, $stock) {
-                $stock = (array) $stock;
-                if (in_array('disponibles', $stock) && !in_array('agotados', $stock)) {
-                    $q->where('cantidad', '>', 0);
-                }
-                if (in_array('agotados', $stock) && !in_array('disponibles', $stock)) {
-                    $q->where('cantidad', '=', 0);
-                }
-            })
-            ->when($filters['ordenar'] ?? null, function ($q, $orden) {
-                return match ($orden) {
-                    'nombre_asc'  => $q->orderBy('nombre', 'asc'),
-                    'nombre_desc' => $q->orderBy('nombre', 'desc'),
-                    'precio_asc'  => $q->orderBy('precio', 'asc'),
-                    'precio_desc' => $q->orderBy('precio', 'desc'),
-                    'stock_asc'   => $q->orderBy('cantidad', 'asc'),
-                    'stock_desc'  => $q->orderBy('cantidad', 'desc'),
-                    default       => $q->orderBy('id', 'asc'),
-                };
-            }, fn($q) => $q->orderBy('id', 'asc'));
+            ->when($precioMax !== null, fn($q) => $q->where('precio', '<=', $precioMax));
+    }
+
+    public function scopeFiltrarPorStock($query, $stock)
+    {
+        if (empty($stock)) {
+            return $query;
+        }
+
+        $stock = (array) $stock;
+
+        return $query->where(function ($q) use ($stock) {
+            if (in_array('disponibles', $stock)) {
+                $q->orWhere('cantidad', '>', 0);
+            }
+            if (in_array('agotados', $stock)) {
+                $q->orWhere('cantidad', '=', 0);
+            }
+        });
+    }
+
+    public function scopeOrdenar($query, ?string $orden)
+    {
+        return match ($orden) {
+            'nombre_asc'  => $query->orderBy('nombre', 'asc'),
+            'nombre_desc' => $query->orderBy('nombre', 'desc'),
+            'precio_asc'  => $query->orderBy('precio', 'asc'),
+            'precio_desc' => $query->orderBy('precio', 'desc'),
+            'stock_asc'   => $query->orderBy('cantidad', 'asc'),
+            'stock_desc'  => $query->orderBy('cantidad', 'desc'),
+            default       => $query->orderBy('id', 'asc'),
+        };
+    }
+
+    /**
+     * Scope principal que orquesta los filtros (opcional, para mantener compatibilidad si se desea)
+     * Pero idealmente usar los scopes individuales en el controlador.
+     */
+    public function scopeFilter($query, array $filters)
+    {
+        return $query
+            ->buscar($filters['search'] ?? null)
+            ->filtrarPorCategorias($filters['categorias'] ?? ($filters['categoria'] ?? null))
+            ->filtrarPorPrecio($filters['precio_min'] ?? null, $filters['precio_max'] ?? null)
+            ->filtrarPorStock($filters['stock'] ?? null)
+            ->ordenar($filters['ordenar'] ?? null);
     }
 
     /*
