@@ -2,66 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Historial;
-use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf; 
-use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\HistorialExport;
+use App\Models\Historial;
+use App\Services\ExportService;
+use Illuminate\Http\Request;
 
 class HistorialController extends Controller
 {
+    public function __construct(
+        protected ExportService $exportService
+    ) {}
+
     public function index(Request $request)
     {
         // 🔹 Solo acciones de productos (NO ventas)
-        $query = Historial::with(['producto' => function ($q) {
-                $q->withTrashed(); // 🔥 Mantiene productos eliminados visibles
-            }])
-            ->whereIn('accion', ['crear', 'editar', 'eliminar']);
+        $query = Historial::with(['producto' => fn($q) => $q->withTrashed()])
+            ->soloProductos()
+            ->buscar($request->input('search'))
+            ->filtrarPorAccion($request->input('accion'))
+            ->ordenar($request->input('ordenar'));
 
-        // 🔎 Búsqueda por producto
-        if ($search = $request->input('search')) {
-            $query->whereHas('producto', function ($q) use ($search) {
-                $q->where('nombre', 'like', "%{$search}%");
-            });
-        }
+        // 🔁 Ver todo / paginado
+        $verTodo = $request->boolean('verTodo');
+        $perPage = $verTodo ? $query->count() : 15;
+        $perPage = $perPage > 0 ? $perPage : 15;
 
-        // 🎯 Filtro por acción
-        if ($accion = $request->input('accion')) {
-            $query->where('accion', $accion);
-        }
+        $historiales = $query->paginate($perPage)->withQueryString();
 
-        // 📎 Ordenar
-        switch ($request->input('ordenar')) {
-            case 'fecha_asc':
-                $query->orderBy('created_at', 'asc');
-                break;
-
-            case 'fecha_desc':
-            default:
-                $query->orderBy('created_at', 'desc');
-                break;
-        }
-
-         // 🔁 Ver todo / paginado
-    $verTodo = $request->boolean('verTodo');
-
-    if ($verTodo) {
-        // usamos como perPage el total de registros
-        $perPage = $query->count();
-        if ($perPage === 0) {
-            $perPage = 1; // evitar perPage = 0
-        }
-    } else {
-        $perPage = 15; // tamaño de página normal
+        return view('historial.index', compact('historiales', 'verTodo'));
     }
-
-    // SIEMPRE paginator
-    $historiales = $query
-        ->paginate($perPage)
-        ->withQueryString();
-
-    return view('historial.index', compact('historiales', 'verTodo'));
-}
 
     /*
     |--------------------------------------------------------------------------
@@ -70,19 +39,10 @@ class HistorialController extends Controller
     */
     public function busqueda(Request $request)
     {
-        $search = $request->input('search');
-
-        $historiales = Historial::with(['producto' => function ($q) {
-                $q->withTrashed(); // 🔥 Mantiene nombres de productos eliminados
-            }])
-            ->whereIn('accion', ['crear', 'editar', 'eliminar']) // 🔥 Saca ventas DEFINITIVO
-            ->when($search, function ($q) use ($search) {
-                // Buscar SOLO por nombre del producto
-                $q->whereHas('producto', function ($q2) use ($search) {
-                    $q2->where('nombre', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('created_at', 'desc')
+        $historiales = Historial::with(['producto' => fn($q) => $q->withTrashed()])
+            ->soloProductos()
+            ->buscar($request->input('search'))
+            ->ordenar('fecha_desc')
             ->take(50)
             ->get();
 
@@ -90,26 +50,25 @@ class HistorialController extends Controller
     }
 
     // Descargar PDF
-    public function exportPdf()
-{
-    $historiales = Historial::with([
-            'producto' => function ($q) {
-                $q->withTrashed();
-            },
-            'usuario',
-        ])
-        ->whereIn('accion', ['crear', 'editar', 'eliminar'])
-        ->orderBy('created_at', 'desc')
-        ->get();
+    public function exportPdf(Request $request)
+    {
+        $historiales = Historial::with(['producto' => fn($q) => $q->withTrashed(), 'usuario'])
+            ->soloProductos()
+            ->buscar($request->input('search'))
+            ->filtrarPorAccion($request->input('accion'))
+            ->ordenar($request->input('ordenar'))
+            ->get();
 
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('historial.pdf', compact('historiales'));
-
-    return $pdf->download('HistorialMovimientos.pdf');
-}
+        return $this->exportService->downloadPdf(
+            'historial.pdf',
+            compact('historiales'),
+            'HistorialMovimientos.pdf'
+        );
+    }
 
     // Descargar Excel
     public function exportExcel()
     {
-        return Excel::download(new HistorialExport, 'HistorialMovimientos.xlsx');
+        return $this->exportService->downloadExcel(new HistorialExport, 'HistorialMovimientos.xlsx');
     }
 }

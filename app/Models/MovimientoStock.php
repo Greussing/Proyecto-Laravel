@@ -42,4 +42,36 @@ public function usuario()
     {
         return $this->belongsTo(Venta::class);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+    public function scopeBuscar($query, ?string $search)
+    {
+        return $query->when($search, function ($q) use ($search) {
+            $q->whereHas('producto', fn($p) => $p->where('nombre', 'like', "%{$search}%"))
+              ->orWhereHas('clienteRelacion', fn($c) => $c->where('nombre', 'like', "%{$search}%"))
+              ->orWhere('detalle', 'like', "%{$search}%");
+        });
+    }
+
+    public function scopeFiltrarPorTipo($query, $tipo)
+    {
+        if (!$tipo) {
+            return $query;
+        }
+        return $query->whereIn('tipo', (array) $tipo);
+    }
+
+    public function scopeOrdenar($query, ?string $orden)
+    {
+        return match ($orden) {
+            'fecha_asc'     => $query->orderBy('created_at', 'asc'),
+            'cantidad_desc' => $query->orderBy('cantidad', 'desc'),
+            'cantidad_asc'  => $query->orderBy('cantidad', 'asc'),
+            default         => $query->orderBy('created_at', 'desc'),
+        };
+    }
 }
