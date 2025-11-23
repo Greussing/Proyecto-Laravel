@@ -1,229 +1,203 @@
-@csrf
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-{{-- SELECCIÓN DE CLIENTE --}}
-<div class="mb-4">
-    <label for="cliente" class="block text-sm font-medium text-gray-700">Cliente</label>
-    @php
-        $clienteSeleccionado = old('cliente', $venta->clienteRelacion->id ?? null);
-        $clienteActual = $clienteSeleccionado
-            ? $clientes->firstWhere('id', $clienteSeleccionado)->nombre ?? 'Seleccione un cliente'
-            : 'Seleccione un cliente';
-    @endphp
+    {{-- Selección de Cliente --}}
+    <div>
+        <x-input-label for="cliente" :value="__('Cliente')" />
+        @php
+            $clienteSeleccionado = old('cliente', $venta->clienteRelacion->id ?? null);
+            $clienteActual = $clienteSeleccionado
+                ? $clientes->firstWhere('id', $clienteSeleccionado)->nombre ?? 'Seleccione un cliente'
+                : 'Seleccione un cliente';
+        @endphp
 
-    <details class="relative border rounded px-2 py-1 mt-1 w-full" id="selectorCliente">
-        <summary class="cursor-pointer select-none">
-            {{ $clienteActual }}
-        </summary>
-        <div class="absolute bg-white border rounded shadow-md mt-1 w-full z-10 max-h-60 overflow-y-auto">
-            <ul>
+        <div x-data="{ open: false, selected: '{{ $clienteActual }}', value: '{{ $clienteSeleccionado }}' }" class="relative mt-1">
+            <button type="button" @click="open = !open" @click.away="open = false" class="relative w-full cursor-default rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm text-gray-700 dark:text-gray-300">
+                <span class="block truncate" x-text="selected"></span>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </button>
+
+            <ul x-show="open" class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-900 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm" style="display: none;">
                 @foreach ($clientes as $cli)
-                    @if (!$clienteSeleccionado || $cli->id != $clienteSeleccionado)
-                        <li>
-                            <a href="#"
-                                onclick="event.preventDefault();
-                                    document.getElementById('cliente').value='{{ $cli->id }}';
-                                    this.closest('details').removeAttribute('open');
-                                    this.closest('details').querySelector('summary').textContent='{{ $cli->nombre }}';"
-                                class="block px-3 py-2 hover:bg-gray-100 rounded">
-                                {{ $cli->nombre }}
-                            </a>
-                        </li>
-                    @endif
+                    <li class="text-gray-900 dark:text-gray-200 relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                        @click="selected = '{{ $cli->nombre }}'; value = '{{ $cli->id }}'; open = false; document.getElementById('cliente').value = '{{ $cli->id }}'">
+                        <span class="block truncate font-normal">
+                            {{ $cli->nombre }}
+                        </span>
+                    </li>
                 @endforeach
             </ul>
+            
+            <input type="hidden" name="cliente" id="cliente" :value="value">
         </div>
-    </details>
+        <x-input-error :messages="$errors->get('cliente')" class="mt-2" />
+    </div>
 
-    <input type="hidden" name="cliente" id="cliente" value="{{ $clienteSeleccionado }}">
-    @error('cliente')
-        <p class="text-red-600 text-sm">{{ $message }}</p>
-    @enderror
-</div>
+    {{-- Selección de Producto --}}
+    <div>
+        <x-input-label for="producto" :value="__('Producto')" />
+        @php
+            $productoSeleccionado = old('producto', $venta->productoRelacion->id ?? null);
+            $productoActual = $productoSeleccionado
+                ? $productos->firstWhere('id', $productoSeleccionado)->nombre ?? 'Seleccione un producto'
+                : 'Seleccione un producto';
+            $precioProducto = $productoSeleccionado ? $productos->firstWhere('id', $productoSeleccionado)->precio ?? 0 : 0;
+        @endphp
 
-{{-- SELECCIÓN DE PRODUCTO --}}
-<div class="mb-4">
-    <label for="producto" class="block text-sm font-medium text-gray-700">Producto</label>
-    @php
-        $productoSeleccionado = old('producto', $venta->productoRelacion->id ?? null);
-        $productoActual = $productoSeleccionado
-            ? $productos->firstWhere('id', $productoSeleccionado)->nombre ?? 'Seleccione un producto'
-            : 'Seleccione un producto';
-        $precioProducto = $productoSeleccionado ? $productos->firstWhere('id', $productoSeleccionado)->precio ?? 0 : 0;
-    @endphp
+        <div x-data="{ open: false, selected: '{{ $productoActual }}', value: '{{ $productoSeleccionado }}' }" class="relative mt-1">
+            <button type="button" @click="open = !open" @click.away="open = false" class="relative w-full cursor-default rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm text-gray-700 dark:text-gray-300">
+                <span class="block truncate" x-text="selected"></span>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </button>
 
-    <details class="relative border rounded px-2 py-1 mt-1 w-full" id="selectorProducto">
-        <summary class="cursor-pointer select-none">
-            {{ $productoActual }}
-        </summary>
-        <div class="absolute bg-white border rounded shadow-md mt-1 w-full z-10 max-h-60 overflow-y-auto">
-            <ul>
+            <ul x-show="open" class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-900 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm" style="display: none;">
                 @foreach ($productos as $prod)
-                    @if (!$productoSeleccionado || $prod->id != $productoSeleccionado)
-                        <li>
-                            <a href="#"
-                                onclick="event.preventDefault();
-                                    document.getElementById('producto').value='{{ $prod->id }}';
-                                    document.getElementById('precio_unitario').value='{{ number_format($prod->precio, 0, ',', '.') }}';
-                                    actualizarTotal();
-                                    this.closest('details').removeAttribute('open');
-                                    this.closest('details').querySelector('summary').textContent='{{ $prod->nombre }}';"
-                                class="block px-3 py-2 hover:bg-gray-100 rounded">
-                                {{ $prod->nombre }}
-                            </a>
-                        </li>
-                    @endif
+                    <li class="text-gray-900 dark:text-gray-200 relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                        @click="selected = '{{ $prod->nombre }}'; 
+                                value = '{{ $prod->id }}'; 
+                                open = false; 
+                                document.getElementById('producto').value = '{{ $prod->id }}';
+                                document.getElementById('precio_unitario').value = '{{ number_format($prod->precio, 0, ',', '.') }}';
+                                actualizarTotal();">
+                        <span class="block truncate font-normal">
+                            {{ $prod->nombre }}
+                        </span>
+                    </li>
                 @endforeach
             </ul>
+            
+            <input type="hidden" name="producto" id="producto" :value="value">
         </div>
-    </details>
-
-    <input type="hidden" name="producto" id="producto" value="{{ $productoSeleccionado }}">
-    @error('producto')
-        <p class="text-red-600 text-sm">{{ $message }}</p>
-    @enderror
-</div>
-
-{{-- CANTIDAD --}}
-<div class="mb-4">
-    <label for="cantidad" class="block text-sm font-medium text-gray-700">Cantidad</label>
-    <input type="number" name="cantidad" id="cantidad" min="1" value="{{ old('cantidad', 1) }}"
-        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200"
-        oninput="actualizarTotal()">
-    @error('cantidad')
-        <p class="text-red-600 text-sm">{{ $message }}</p>
-    @enderror
-</div>
-
-{{-- PRECIO UNITARIO --}}
-<div class="mb-4">
-    <label for="precio_unitario" class="block text-sm font-medium text-gray-700">Precio unitario</label>
-    <div class="relative mt-1">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-700 font-semibold">Gs.</span>
-        <input type="text" name="precio_unitario" id="precio_unitario"
-            value="{{ old('precio_unitario', isset($venta) ? number_format($venta->precio_unitario ?? $precioProducto, 0, ',', '.') : '') }}"
-            class="pl-12 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200"
-            oninput="actualizarTotal()">
+        <x-input-error :messages="$errors->get('producto')" class="mt-2" />
     </div>
-    @error('precio_unitario')
-        <p class="text-red-600 text-sm">{{ $message }}</p>
-    @enderror
-</div>
 
-{{-- TOTAL --}}
-<div class="mb-4">
-    <label for="total" class="block text-sm font-medium text-gray-700">Total</label>
-    <div class="relative mt-1">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-700 font-semibold">Gs.</span>
-        <input type="text" name="total" id="total" readonly
-            value="{{ old('total', isset($venta) ? number_format($venta->total, 0, ',', '.') : '') }}"
-            class="pl-12 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100 focus:ring focus:ring-blue-200">
+    {{-- Cantidad --}}
+    <div>
+        <x-input-label for="cantidad" :value="__('Cantidad')" />
+        <x-text-input id="cantidad" class="block mt-1 w-full" type="number" name="cantidad" min="1" :value="old('cantidad', 1)" oninput="actualizarTotal()" required />
+        <x-input-error :messages="$errors->get('cantidad')" class="mt-2" />
     </div>
-</div>
 
-{{-- MÉTODO DE PAGO --}}
-<div class="mb-4">
-    <label for="metodo_pago" class="block text-sm font-medium text-gray-700">Método de pago</label>
-    @php
-        $metodoSeleccionado = old('metodo_pago', $venta->metodo_pago ?? null);
-        $metodoActual = $metodoSeleccionado ?: 'Seleccione un método';
-        $metodos = ['Efectivo', 'Tarjeta', 'Transferencia'];
-    @endphp
+    {{-- Precio Unitario --}}
+    <div>
+        <x-input-label for="precio_unitario" :value="__('Precio Unitario')" />
+        <div class="relative mt-1">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold">Gs.</span>
+            <x-text-input id="precio_unitario" class="block w-full pl-12" type="text" name="precio_unitario" 
+                :value="old('precio_unitario', isset($venta) ? number_format($venta->precio_unitario ?? $precioProducto, 0, ',', '.') : '')" 
+                oninput="actualizarTotal()" required />
+        </div>
+        <x-input-error :messages="$errors->get('precio_unitario')" class="mt-2" />
+    </div>
 
-    <details class="relative border rounded px-2 py-1 mt-1 w-full">
-        <summary class="cursor-pointer select-none">
-            {{ $metodoActual }}
-        </summary>
-        <div class="absolute bg-white border rounded shadow-md mt-1 w-full z-10 max-h-60 overflow-y-auto">
-            <ul>
+    {{-- Total --}}
+    <div>
+        <x-input-label for="total" :value="__('Total')" />
+        <div class="relative mt-1">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold">Gs.</span>
+            <x-text-input id="total" class="block w-full pl-12 bg-gray-100 dark:bg-gray-700 cursor-not-allowed" type="text" name="total" readonly
+                :value="old('total', isset($venta) ? number_format($venta->total, 0, ',', '.') : '')" />
+        </div>
+    </div>
+
+    {{-- Método de Pago --}}
+    <div>
+        <x-input-label for="metodo_pago" :value="__('Método de Pago')" />
+        @php
+            $metodoSeleccionado = old('metodo_pago', $venta->metodo_pago ?? null);
+            $metodoActual = $metodoSeleccionado ?: 'Seleccione un método';
+            $metodos = ['Efectivo', 'Tarjeta', 'Transferencia'];
+        @endphp
+
+        <div x-data="{ open: false, selected: '{{ $metodoActual }}', value: '{{ $metodoSeleccionado }}' }" class="relative mt-1">
+            <button type="button" @click="open = !open" @click.away="open = false" class="relative w-full cursor-default rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm text-gray-700 dark:text-gray-300">
+                <span class="block truncate" x-text="selected"></span>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </button>
+
+            <ul x-show="open" class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-900 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm" style="display: none;">
                 @foreach ($metodos as $met)
-                    @if (!$metodoSeleccionado || $met != $metodoSeleccionado)
-                        <li>
-                            <a href="#"
-                                onclick="event.preventDefault();
-                                    document.getElementById('metodo_pago').value='{{ $met }}';
-                                    this.closest('details').removeAttribute('open');
-                                    this.closest('details').querySelector('summary').textContent='{{ $met }}';"
-                                class="block px-3 py-2 hover:bg-gray-100 rounded">
-                                {{ $met }}
-                            </a>
-                        </li>
-                    @endif
+                    <li class="text-gray-900 dark:text-gray-200 relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                        @click="selected = '{{ $met }}'; value = '{{ $met }}'; open = false; document.getElementById('metodo_pago').value = '{{ $met }}'">
+                        <span class="block truncate font-normal">
+                            {{ $met }}
+                        </span>
+                    </li>
                 @endforeach
             </ul>
+            
+            <input type="hidden" name="metodo_pago" id="metodo_pago" :value="value">
         </div>
-    </details>
+        <x-input-error :messages="$errors->get('metodo_pago')" class="mt-2" />
+    </div>
 
-    {{-- Campo oculto que se envía en el formulario --}}
-    <input type="hidden" name="metodo_pago" id="metodo_pago" value="{{ $metodoSeleccionado }}">
+    {{-- Estado --}}
+    <div>
+        <x-input-label for="estado" :value="__('Estado')" />
+        @php
+            $estadoSeleccionado = old('estado', $venta->estado ?? null);
+            $estadoActual = $estadoSeleccionado ?: 'Seleccione un estado';
+            $estados = ['Pendiente', 'Pagado', 'Anulado'];
+        @endphp
 
-    @error('metodo_pago')
-        <p class="text-red-600 text-sm">{{ $message }}</p>
-    @enderror
-</div>
+        <div x-data="{ open: false, selected: '{{ $estadoActual }}', value: '{{ $estadoSeleccionado }}' }" class="relative mt-1">
+            <button type="button" @click="open = !open" @click.away="open = false" class="relative w-full cursor-default rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm text-gray-700 dark:text-gray-300">
+                <span class="block truncate" x-text="selected"></span>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </button>
 
-{{-- ESTADO --}}
-<div class="mb-4">
-    <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
-    @php
-        $estadoSeleccionado = old('estado', $venta->estado ?? null);
-        $estadoActual = $estadoSeleccionado ?: 'Seleccione un estado';
-        $estados = ['Pendiente', 'Pagado', 'Anulado'];
-    @endphp
-
-    <details class="relative border rounded px-2 py-1 mt-1 w-full">
-        <summary class="cursor-pointer select-none">
-            {{ $estadoActual }}
-        </summary>
-        <div class="absolute bg-white border rounded shadow-md mt-1 w-full z-10 max-h-60 overflow-y-auto">
-            <ul>
+            <ul x-show="open" class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-900 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm" style="display: none;">
                 @foreach ($estados as $est)
-                    @if ($est != $estadoSeleccionado)
-                        <li>
-                            <a href="#"
-                                onclick="event.preventDefault();
-                                    document.getElementById('estado').value='{{ $est }}';
-                                    this.closest('details').removeAttribute('open');
-                                    this.closest('details').querySelector('summary').textContent='{{ $est }}';"
-                                class="block px-3 py-2 hover:bg-gray-100 rounded">
-                                {{ $est }}
-                            </a>
-                        </li>
-                    @endif
+                    <li class="text-gray-900 dark:text-gray-200 relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                        @click="selected = '{{ $est }}'; value = '{{ $est }}'; open = false; document.getElementById('estado').value = '{{ $est }}'">
+                        <span class="block truncate font-normal">
+                            {{ $est }}
+                        </span>
+                    </li>
                 @endforeach
             </ul>
+            
+            <input type="hidden" name="estado" id="estado" :value="value">
         </div>
-    </details>
+        <x-input-error :messages="$errors->get('estado')" class="mt-2" />
+    </div>
 
-    {{-- Campo oculto que se envía en el formulario --}}
-    <input type="hidden" name="estado" id="estado" value="{{ $estadoSeleccionado }}">
+    {{-- Fecha --}}
+    <div>
+        <x-input-label for="fecha" :value="__('Fecha')" />
+        <x-text-input id="fecha" class="block mt-1 w-full" type="date" name="fecha" 
+            :value="old('fecha', isset($venta) ? $venta->fecha : date('Y-m-d'))" required />
+        <x-input-error :messages="$errors->get('fecha')" class="mt-2" />
+    </div>
 
-    @error('estado')
-        <p class="text-red-600 text-sm">{{ $message }}</p>
-    @enderror
 </div>
 
-{{-- FECHA --}}
-<div class="mb-4">
-    <label for="fecha" class="block text-sm font-medium text-gray-700">Fecha</label>
-    <input type="date" name="fecha" id="fecha"
-        value="{{ old('fecha', isset($venta) ? $venta->fecha : date('Y-m-d')) }}"
-        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200">
-    @error('fecha')
-        <p class="text-red-600 text-sm">{{ $message }}</p>
-    @enderror
-</div>
-
-{{-- BOTONES --}}
-<div class="flex justify-end space-x-2">
-    <a href="{{ route('ventas.index') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-        Atrás
+{{-- Botones --}}
+<div class="flex justify-end space-x-4 mt-6">
+    <a href="{{ route('ventas.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+        {{ __('Cancelar') }}
     </a>
-    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        Guardar
-    </button>
+    <x-primary-button>
+        {{ __('Guardar Venta') }}
+    </x-primary-button>
 </div>
 
-{{-- SCRIPTS --}}
+{{-- Scripts --}}
 <script>
     function limpiarNumero(valor) {
         return valor.replace(/\D/g, '');
@@ -258,22 +232,7 @@
             const hoy = new Date().toISOString().split('T')[0];
             fecha.value = hoy;
         }
-
-        // 📆 Mostrar calendario al hacer clic en cualquier parte del campo
-        if (fecha) {
-            fecha.addEventListener('focus', function() {
-                this.showPicker && this.showPicker();
-            });
-        }
-
-        // 💲 Actualizar precio y total cuando cambia el producto
-        producto.addEventListener('change', function() {
-            const selected = this.options[this.selectedIndex];
-            const precioData = selected.getAttribute('data-precio');
-            precio.value = formatearMiles(precioData || '0');
-            actualizarTotal();
-        });
-
+        
         // 🔢 Recalcular al cambiar cantidad o precio manualmente
         cantidad.addEventListener('input', actualizarTotal);
         precio.addEventListener('input', actualizarTotal);

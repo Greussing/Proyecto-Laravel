@@ -13,6 +13,8 @@ use App\Models\User;
 use App\Models\Venta;
 use Illuminate\Http\Request;
 use App\Services\VentaService;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class VentaController extends Controller
 {
@@ -28,47 +30,48 @@ class VentaController extends Controller
      * INDEX → listado de ventas
      */
     public function index(Request $request)
-    {
-        $ventas = Venta::with(['usuarioRelacion', 'clienteRelacion', 'detalles'])
-            ->withCount(['detalles as cantidad_productos' => function ($q) {
-                $q->select(\DB::raw('coalesce(sum(cantidad),0)'));
-            }])
-            ->filtrarPorFecha($request->input('fecha_desde'), $request->input('fecha_hasta'))
-            ->filtrarPorMetodo($request->input('metodo_pago'))
-            ->filtrarPorEstado($request->input('estado'))
-            ->filtrarPorTotal($request->input('total_min'), $request->input('total_max'))
-            ->ordenar($request->input('ordenar'))
-            ->when(
-                $request->has('verTodo'),
-                fn($q) => $q->get(),
-                fn($q) => $q->paginate(15)->withQueryString()
-            );
+{
+    $query = Venta::with(['usuarioRelacion', 'clienteRelacion', 'detalles'])
+        ->withCount(['detalles as cantidad_productos' => function ($q) {
+            $q->select(\DB::raw('coalesce(sum(cantidad),0)'));
+        }])
+        ->filtrarPorFecha($request->input('fecha_desde'), $request->input('fecha_hasta'))
+        ->filtrarPorMetodo($request->input('metodo_pago'))
+        ->filtrarPorEstado($request->input('estado'))
+        ->filtrarPorTotal($request->input('total_min'), $request->input('total_max'))
+        ->ordenar($request->input('ordenar'));
 
-        return view('ventas.index', compact('ventas'));
-    }
+    $verTodo   = $request->boolean('verTodo');
+    $porPagina = $verTodo ? $query->count() : 15;
 
+    $porPagina = $porPagina > 0 ? $porPagina : 15;
+
+    $ventas = $query->paginate($porPagina)->withQueryString();
+
+    return view('ventas.index', compact('ventas', 'verTodo'));
+}
     /**
      * BUSQUEDA → búsqueda AJAX para autocompletar
      */
     public function busqueda(Request $request)
-    {
-        $termino = $request->input('search');
+{
+    $termino = $request->input('search');
 
-        $ventas = Venta::with([
-                'clienteRelacion:id,nombre',
-                'detalles.producto:id,nombre',
-            ])
-            ->when($termino, function ($q) use ($termino) {
-                $q->whereHas('clienteRelacion', function ($sub) use ($termino) {
-                    $sub->where('nombre', 'like', "%{$termino}%");
-                });
-            })
-            ->orderByDesc('fecha')
-            ->take(30)
-            ->get();
+    $ventas = Venta::with([
+            'clienteRelacion:id,nombre',
+            'detalles.producto:id,nombre',
+        ])
+        ->when($termino, function ($q) use ($termino) {
+            $q->whereHas('clienteRelacion', function ($sub) use ($termino) {
+                $sub->where('nombre', 'like', "%{$termino}%");
+            });
+        })
+        ->orderByDesc('fecha')
+        ->take(30)
+        ->get();
 
-        return response()->json($ventas);
-    }
+    return response()->json($ventas);
+}
 
     /**
      * CREATE → formulario de nueva venta
@@ -174,4 +177,29 @@ class VentaController extends Controller
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
     }
+
+    public function exportExcel(Request $request)
+{
+    return Excel::download(
+        new \App\Exports\VentaExport($request->all()),
+        'ventas.xlsx'
+    );
+}
+
+public function exportPdf(Request $request)
+{
+    $query = Venta::with(['usuarioRelacion', 'clienteRelacion', 'detalles'])
+        ->filtrarPorFecha($request->input('fecha_desde'), $request->input('fecha_hasta'))
+        ->filtrarPorMetodo($request->input('metodo_pago'))
+        ->filtrarPorEstado($request->input('estado'))
+        ->filtrarPorTotal($request->input('total_min'), $request->input('total_max'))
+        ->ordenar($request->input('ordenar'));
+
+    $ventas = $query->get();
+
+    $pdf = Pdf::loadView('ventas.pdf', compact('ventas'))
+        ->setPaper('A4', 'portrait');
+
+    return $pdf->download('ventas.pdf');
+}
 }

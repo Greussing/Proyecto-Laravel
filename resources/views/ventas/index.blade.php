@@ -1,763 +1,643 @@
 <x-app-layout>
-    {{-- Encabezado de la página --}}
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-white">
-            Listado de Ventas
+        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+            {{ __('Listado de Ventas') }}
         </h2>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Mensaje de éxito → se muestra si hay session('success') (ej: al crear/editar producto) --}}
+            {{-- Mensaje de éxito --}}
             @if (session('success'))
-                <div class="mb-4 text-green-700 bg-green-100 p-4 rounded">
+                <div class="mb-4 text-green-700 bg-green-100 dark:bg-green-900 dark:text-green-300 p-4 rounded">
                     {{ session('success') }}
                 </div>
             @endif
 
-            <div class="bg-white shadow rounded-lg p-6">
+            <x-card>
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4 w-full">
+    {{-- Filtros de búsqueda → GET hacia ventas.index --}}
+    <form method="GET"
+          action="{{ route('ventas.index') }}"
+          class="flex flex-wrap md:flex-nowrap gap-2 items-center flex-1 min-w-0">
 
-                {{-- 🔹 Filtros + Botón crear venta --}}
-                <div class="mb-4 flex justify-between items-center flex-wrap gap-2 w-full">
+        {{-- Buscar por Cliente --}}
+        <div class="relative">
+            {{-- Botón lupa --}}
+            <button type="submit"
+                    class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+                </svg>
+            </button>
 
-                    {{-- Filtros de búsqueda → GET hacia ventas.index --}}
-<form method="GET" action="{{ route('ventas.index') }}" class="flex flex-wrap gap-2">
+            {{-- Input búsqueda (un poco más pequeño) --}}
+            <input type="text"
+                   name="search"
+                   id="searchVentas"
+                   placeholder="Buscar por Cliente"
+                   value="{{ request('search') }}"
+                   class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300
+                          focus:border-indigo-500 dark:focus:border-indigo-600
+                          focus:ring-indigo-500 dark:focus:ring-indigo-600
+                          rounded-md shadow-sm pl-9 pr-8 py-2 w-52 md:w-60 text-sm"
+                   oninput="toggleSearchVentas(this)">
 
-    {{-- Buscar por Cliente --}}
-    <div class="relative">
-
-        <!-- Botón lupa -->
-        <button type="submit"
-            class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
-            </svg>
-        </button>
-
-        <!-- Input búsqueda -->
-        <input type="text" name="search" id="searchVentas"
-            placeholder="Buscar por Cliente"
-            value="{{ request('search') }}"
-            class="border rounded pl-9 pr-14 py-1 w-60 md:w-72 focus:ring-2 focus:ring-indigo-500 outline-none"
-            oninput="toggleSearchVentas(this)">
-
-        <!-- Botón limpiar -->
-        <div id="searchVentas-icons"
-            class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 {{ request('search') ? '' : 'hidden' }}">
-            <a href="{{ route('ventas.index', request()->except(['search', 'page'])) }}"
-                class="text-red-500 hover:text-red-700 font-bold">×</a>
+            {{-- Botón limpiar --}}
+            <div id="searchVentas-icons"
+                 class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 {{ request('search') ? '' : 'hidden' }}">
+                <a href="{{ route('ventas.index', request()->except(['search', 'page'])) }}"
+                   class="text-red-500 hover:text-red-700 font-bold">×</a>
+            </div>
         </div>
-    </div>
 
-{{-- Script mostrar/ocultar ícono limpiar --}}
-<script>
-    function toggleSearchVentas(input) {
-        const icons = document.getElementById('searchVentas-icons');
-        if (input.value.trim() !== '') {
-            icons.classList.remove('hidden');
-        } else {
-            icons.classList.add('hidden');
-        }
-    }
-</script>
-
-{{-- Script AJAX para búsqueda dinámica --}}
-<script>
-    const ventasBusquedaUrl = "{{ route('ventas.busqueda') }}";
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const input = document.getElementById('searchVentas');
-        const tabla = document.querySelector('table tbody');
-        let timeout = null;
-
-        input.addEventListener('input', function () {
-            clearTimeout(timeout);
-            const valor = this.value.trim();
-
-            timeout = setTimeout(() => {
-
-                if (valor === '') {
-                    window.location.href = "{{ route('ventas.index') }}";
-                    return;
+        <script>
+            function toggleSearchVentas(input) {
+                const icons = document.getElementById('searchVentas-icons');
+                if (input.value.trim() !== '') {
+                    icons.classList.remove('hidden');
+                } else {
+                    icons.classList.add('hidden');
                 }
+            }
+        </script>
 
-                tabla.innerHTML = `
-                    <tr><td colspan="10" class="text-center py-4 text-gray-400">
-                        Buscando...
-                    </td></tr>`;
+        {{-- Filtro Fechas --}}
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" type="button"
+                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                @if (request('fecha_inicio') || request('fecha_fin'))
+                    <span class="text-blue-600 dark:text-blue-400">Fechas</span>
+                @else
+                    Fechas
+                @endif
+                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                </svg>
+            </button>
+            <div x-show="open"
+                 class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
+                <div class="mb-2">
+                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Desde</label>
+                    <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
+                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Hasta</label>
+                    <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}"
+                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+                </div>
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">
+                    Aplicar
+                </button>
+                @if (request('fecha_inicio') || request('fecha_fin'))
+                    <a href="{{ route('ventas.index', request()->except(['fecha_inicio', 'fecha_fin', 'page'])) }}"
+                       class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
+                @endif
+            </div>
+        </div>
 
-                fetch(ventasBusquedaUrl + "?search=" + encodeURIComponent(valor))
-                    .then(res => res.json())
-                    .then(data => {
-                        tabla.innerHTML = '';
+        {{-- Filtro Método Pago --}}
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" type="button"
+                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                @if (request('metodo_pago'))
+                    <span class="text-blue-600 dark:text-blue-400">Pago ({{ count((array)request('metodo_pago')) }})</span>
+                @else
+                    Pago
+                @endif
+                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                </svg>
+            </button>
+            <div x-show="open"
+                 class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
+                @foreach (['Efectivo', 'Tarjeta', 'Transferencia'] as $metodo)
+                    <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
+                        <input type="checkbox" name="metodo_pago[]" value="{{ $metodo }}"
+                               {{ in_array($metodo, (array) request('metodo_pago')) ? 'checked' : '' }}
+                               onchange="this.form.submit()"
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $metodo }}</span>
+                    </label>
+                @endforeach
+                @if (request('metodo_pago'))
+                    <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                        <a href="{{ route('ventas.index', request()->except(['metodo_pago', 'page'])) }}"
+                           class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar filtro</a>
+                    </div>
+                @endif
+            </div>
+        </div>
 
-                        if (data.length === 0) {
-                            tabla.innerHTML = `
-                                <tr><td colspan="10" class="text-center py-4 text-gray-500">
-                                    No se encontraron ventas
-                                </td></tr>`;
-                            return;
-                        }
+        {{-- Filtro Estado --}}
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" type="button"
+                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                @if (request('estado'))
+                    <span class="text-blue-600 dark:text-blue-400">Estado ({{ count((array)request('estado')) }})</span>
+                @else
+                    Estado
+                @endif
+                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                </svg>
+            </button>
+            <div x-show="open"
+                 class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
+                @foreach (['Pagado', 'Pendiente', 'Anulado'] as $estado)
+                    <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
+                        <input type="checkbox" name="estado[]" value="{{ $estado }}"
+                               {{ in_array($estado, (array) request('estado')) ? 'checked' : '' }}
+                               onchange="this.form.submit()"
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $estado }}</span>
+                    </label>
+                @endforeach
+                @if (request('estado'))
+                    <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                        <a href="{{ route('ventas.index', request()->except(['estado', 'page'])) }}"
+                           class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar filtro</a>
+                    </div>
+                @endif
+            </div>
+        </div>
 
-                        data.forEach((v) => {
+        {{-- Filtro Total --}}
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" type="button"
+                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                @if (request('total_min') || request('total_max'))
+                    <span class="text-blue-600 dark:text-blue-400">Total</span>
+                @else
+                    Total
+                @endif
+                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                </svg>
+            </button>
+            <div x-show="open"
+                 class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
+                <div class="mb-2">
+                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Mínimo</label>
+                    <input type="text" name="total_min" value="{{ request('total_min') }}" placeholder="Ej: 10000"
+                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Máximo</label>
+                    <input type="text" name="total_max" value="{{ request('total_max') }}" placeholder="Ej: 500000"
+                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+                </div>
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">
+                    Aplicar
+                </button>
+                @if (request('total_min') || request('total_max'))
+                    <a href="{{ route('ventas.index', request()->except(['total_min', 'total_max', 'page'])) }}"
+                       class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
+                @endif
+            </div>
+        </div>
 
-                            // Cliente
-                            const cliente = v.cliente_relacion
-                                ? v.cliente_relacion.nombre
-                                : 'N/A';
+        {{-- Ordenar --}}
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" @click.away="open = false" type="button"
+                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                Ordenar
+                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                </svg>
+            </button>
+            <div x-show="open"
+                 class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 py-1">
+                @php
+                    $opciones = [
+                        'fecha_desc' => 'Fecha (Reciente)',
+                        'fecha_asc'  => 'Fecha (Antigua)',
+                        'total_desc' => 'Total (Mayor)',
+                        'total_asc'  => 'Total (Menor)',
+                    ];
+                @endphp
+                @foreach ($opciones as $key => $label)
+                    <a href="{{ route('ventas.index', array_merge(request()->except(['ordenar', 'page']), ['ordenar' => $key])) }}"
+                       class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 {{ request('ordenar') == $key ? 'bg-gray-100 dark:bg-gray-600 font-bold' : '' }}">
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
 
-                            // Producto → primer detalle
-                            const producto = v.detalles && v.detalles.length > 0
-                                ? v.detalles[0].producto.nombre
-                                : '—';
+    </form>
 
-                            // Cantidad
-                            const cantidad = v.detalles && v.detalles.length > 0
-                                ? v.detalles[0].cantidad
-                                : '—';
+    {{-- 🔹 Contenedor fijo para PDF / Excel / Crear --}}
+    <div class="flex items-center gap-2 flex-shrink-0">
+        {{-- Exportar PDF --}}
+        <a href="{{ route('ventas.export.pdf', request()->all()) }}"
+           class="inline-flex items-center px-3 py-1.5 bg-red-600 border border-transparent rounded-md
+                  font-semibold text-[11px] md:text-xs text-white uppercase tracking-widest
+                  hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none
+                  focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            PDF
+        </a>
 
-                            tabla.innerHTML += `
-<tr class="border-b hover:bg-gray-50">
+        {{-- Exportar Excel --}}
+        <a href="{{ route('ventas.export.excel', request()->all()) }}"
+           class="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md
+                  font-semibold text-[11px] md:text-xs text-white uppercase tracking-widest
+                  hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none
+                  focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Excel
+        </a>
 
-    <!-- ID -->
-    <td class="px-4 py-2 text-center font-medium text-gray-700">
-        #${v.id}
-    </td>
+        {{-- Crear venta --}}
+        <a href="{{ route('ventas.create') }}"
+           class="inline-flex items-center justify-center h-8 w-8 md:h-9 md:w-9
+                  bg-blue-600 hover:bg-blue-700 text-white rounded-full
+                  focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
+           title="Nueva venta">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 4v16m8-8H4" />
+            </svg>
+        </a>
+    </div>
+</div>
 
-    <!-- Cliente -->
-    <td class="px-4 py-2">
-        ${cliente}
-    </td>
-
-    <!-- Producto -->
-    <td class="px-4 py-2">
-        ${producto}
-    </td>
-
-    <!-- Cantidad -->
-    <td class="px-4 py-2 text-center font-semibold">
-        ${cantidad}
-    </td>
-
-    <!-- Precio Unitario -->
-    <td class="px-4 py-2 text-right">
-        ${
-            v.detalles && v.detalles.length > 0
-                ? "Gs. " + Number(v.detalles[0].precio_unitario).toLocaleString("es-PY")
-                : "—"
-        }
-    </td>
-
-    <!-- Total -->
-    <td class="px-4 py-2 text-right font-bold text-blue-700">
-        Gs. ${Number(v.total).toLocaleString("es-PY")}
-    </td>
-
-    <!-- Método de pago -->
-    <td class="px-4 py-2 text-center">
-        ${v.metodo_pago ?? "—"}
-    </td>
-
-    <!-- Estado -->
-    <td class="px-4 py-2 text-center">
-        ${v.estado ?? "—"}
-    </td>
-
-    <!-- Fecha -->
-    <td class="px-4 py-2 text-center text-gray-700">
-        ${
-            v.fecha
-                ? new Date(v.fecha).toLocaleDateString("es-PY")
-                : "—"
-        }
-    </td>
-
-    <!-- Acciones (vacío en búsqueda AJAX) -->
-    <td class="px-4 py-2 text-center text-gray-400">
-        —
-    </td>
-
-</tr>`;
-                        });
-                    })
-                    .catch(err => console.error("Error en búsqueda:", err));
-            }, 300);
-        });
-    });
-</script>
-
-                        {{-- Filtro por Fechas (desde / hasta) --}}
-                        <details class="relative border rounded px-2 py-1">
-                            <summary
-                                class="cursor-pointer select-none summary-arrow {{ request('fecha_desde') || request('fecha_hasta') ? 'text-blue-600 font-bold' : '' }}">
-                                @if (request('fecha_desde') || request('fecha_hasta'))
-                                    Fechas:
-                                    {{ request('fecha_desde') ? \Carbon\Carbon::parse(request('fecha_desde'))->format('d/m/Y') : 'Inicio' }}
-                                    –
-                                    {{ request('fecha_hasta') ? \Carbon\Carbon::parse(request('fecha_hasta'))->format('d/m/Y') : 'Hoy' }}
-                                    <a href="{{ route('ventas.index', request()->except(['fecha_desde', 'fecha_hasta', 'page'])) }}"
-                                        class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
-                                @else
-                                    Fechas
-                                @endif
-                            </summary>
-                            {{-- Inputs de fechas --}}
-                            <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
-                                <label class="block text-sm text-gray-700">Desde</label>
-                                <input type="date" name="fecha_desde" value="{{ request('fecha_desde') }}"
-                                    class="w-full border rounded px-2 py-1 text-sm mb-2 focus:ring-1 focus:ring-indigo-500">
-
-                                <label class="block text-sm text-gray-700">Hasta</label>
-                                <input type="date" name="fecha_hasta" value="{{ request('fecha_hasta') }}"
-                                    class="w-full border rounded px-2 py-1 text-sm focus:ring-1 focus:ring-indigo-500">
-
-                                <button type="submit"
-                                    class="mt-2 bg-blue-600 text-white py-1 rounded hover:bg-blue-700 text-sm w-full">
-                                    Aplicar
-                                </button>
-                            </div>
-                        </details>
-
-                        {{-- Filtro por Método de pago --}}
-                        @php
-                            $metodosSeleccionados = (array) request('metodo_pago');
-                        @endphp
-
-                        <details class="relative border rounded px-2 py-1">
-                            <summary
-                                class="cursor-pointer select-none summary-arrow {{ $metodosSeleccionados ? 'text-blue-600 font-bold' : '' }}">
-                                @if ($metodosSeleccionados)
-                                    Método:
-                                    {{ implode(', ', $metodosSeleccionados) }}
-                                    <a href="{{ route('ventas.index', request()->except(['metodo_pago', 'page'])) }}"
-                                        class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
-                                @else
-                                    Método de pago
-                                @endif
-                            </summary>
-
-                            <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
-                                @foreach (['Efectivo', 'Tarjeta', 'Transferencia'] as $metodo)
-                                    <label class="flex items-center">
-                                        {{-- Cambiado a radio y sin [] en el name --}}
-                                        <input type="radio" name="metodo_pago" value="{{ $metodo }}"
-                                            {{ in_array($metodo, $metodosSeleccionados) ? 'checked' : '' }}
-                                            onchange="this.form.submit()">
-                                        <span class="ml-2">{{ $metodo }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </details>
-
-                        {{-- Filtro por Estado --}}
-                        @php
-                            $estadosSeleccionados = (array) request('estado');
-                        @endphp
-
-                        <details class="relative border rounded px-2 py-1">
-                            <summary
-                                class="cursor-pointer select-none summary-arrow {{ $estadosSeleccionados ? 'text-blue-600 font-bold' : '' }}">
-                                @if ($estadosSeleccionados)
-                                    Estado:
-                                    {{ implode(', ', $estadosSeleccionados) }}
-                                    <a href="{{ route('ventas.index', request()->except(['estado', 'page'])) }}"
-                                        class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
-                                @else
-                                    Estado
-                                @endif
-                            </summary>
-
-                            <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
-                                @foreach (['Pagado', 'Pendiente', 'Anulado'] as $est)
-                                    <label class="flex items-center">
-                                        {{-- Cambiado a radio y sin [] en el name --}}
-                                        <input type="radio" name="estado" value="{{ $est }}"
-                                            {{ in_array($est, $estadosSeleccionados) ? 'checked' : '' }}
-                                            onchange="this.form.submit()">
-                                        <span class="ml-2">{{ $est }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </details>
-
-                        {{-- Filtro por Total (mín y máx) --}}
-                        <details class="relative border rounded px-2 py-1">
-                            <summary
-                                class="cursor-pointer select-none summary-arrow {{ request('total_min') || request('total_max') ? 'text-blue-600 font-bold' : '' }}">
-                                @if (request('total_min') || request('total_max'))
-                                    Total:
-                                    {{ request('total_min')
-                                        ? 'Gs. ' . number_format((int) str_replace(['.', ','], '', request('total_min')), 0, ',', '.')
-                                        : '0' }}
-                                    –
-                                    {{ request('total_max')
-                                        ? 'Gs. ' . number_format((int) str_replace(['.', ','], '', request('total_max')), 0, ',', '.')
-                                        : '∞' }}
-                                    <a href="{{ route('ventas.index', request()->except(['total_min', 'total_max', 'page'])) }}"
-                                        class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
-                                @else
-                                    Total
-                                @endif
-                            </summary>
-
-                            {{-- Inputs de total --}}
-                            <div class="absolute bg-white border rounded shadow-md mt-1 z-10 p-2 w-56">
-
-                                <label class="block text-sm text-gray-700">Mínimo</label>
-                                <div class="flex items-center border rounded px-2 py-1 w-full mb-2">
-                                    <span class="text-gray-600 mr-1">Gs.</span>
-                                    <input type="text" name="total_min" id="total_min"
-                                        value="{{ request('total_min') ? number_format((int) str_replace(['.', ','], '', request('total_min')), 0, ',', '.') : '' }}"
-                                        placeholder="Ej: 50.000"
-                                        class="formatear-numero flex-1 text-sm border-0 focus:ring-0 p-0 outline-none">
-                                </div>
-
-                                <label class="block text-sm text-gray-700">Máximo</label>
-                                <div class="flex items-center border rounded px-2 py-1 w-full">
-                                    <span class="text-gray-600 mr-1">Gs.</span>
-                                    <input type="text" name="total_max" id="total_max"
-                                        value="{{ request('total_max') ? number_format((int) str_replace(['.', ','], '', request('total_max')), 0, ',', '.') : '' }}"
-                                        placeholder="Ej: 500.000"
-                                        class="formatear-numero flex-1 text-sm border-0 focus:ring-0 p-0 outline-none">
-                                </div>
-
-                                <button type="submit"
-                                    class="mt-2 bg-blue-600 text-white py-1 rounded hover:bg-blue-700 text-sm w-full">
-                                    Aplicar
-                                </button>
-                            </div>
-                        </details>
-
-                        {{-- ORDENAR --}}
-                        @php
-                            $ordenes = [
-                                'fecha_desc' => 'Fecha (recientes)',
-                                'fecha_asc' => 'Fecha (antiguas)',
-                                'total_desc' => 'Total (mayor)',
-                                'total_asc' => 'Total (menor)',
-                            ];
-                            $ordenActual = request('ordenar') ? $ordenes[request('ordenar')] ?? 'Ordenar' : 'Ordenar';
-                        @endphp
-
-                        <details class="relative border rounded px-2 py-1">
-                            <summary
-                                class="cursor-pointer select-none summary-arrow {{ request('ordenar') ? 'text-blue-600 font-bold' : '' }}">
-                                {{ $ordenActual }}
-                                @if (request('ordenar'))
-                                    <a href="{{ route('ventas.index', request()->except(['ordenar', 'page'])) }}"
-                                        class="ml-2 text-red-500 font-bold">✕</a>
-                                @endif
-                            </summary>
-
-                            <div class="absolute bg-white border rounded shadow-md mt-1 w-52 z-10">
-                                <ul>
-                                    @foreach ($ordenes as $valor => $texto)
-                                        <li>
-                                            <a href="{{ route('ventas.index', array_merge(request()->except(['ordenar', 'page']), ['ordenar' => $valor])) }}"
-                                                class="block px-3 py-1 hover:bg-gray-100">
-                                                {{ $texto }}
-                                            </a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </details>
-
-                        {{-- Análisis de Productos --}}
-                        <details class="relative border rounded px-2 py-1">
-                            <summary class="cursor-pointer select-none summary-arrow">
-                                Análisis Productos
-                            </summary>
-
-                            <div class="absolute bg-white border rounded shadow-md mt-1 w-56 z-10">
-                                <ul class="text-sm">
-                                    <li>
-                                        <a href="{{ route('analisis.index') }}"
-                                            class="block px-3 py-2 hover:bg-gray-100">
-                                            📋 Ver Análisis
-                                        </a>
-                                    </li>
-
-                                    <hr class="my-1">
-
-                                    <li>
-                                        <a href="{{ route('analisis.pdf') }}"
-                                            class="block px-3 py-2 hover:bg-gray-100">
-                                            🧾 Descargar en PDF (PDF)
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a href="{{ route('analisis.excel') }}"
-                                            class="block px-3 py-2 hover:bg-gray-100">
-                                            📊 Exportar a Excel (Excel)
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </details>
-
-                        {{-- HISTORIAL DE STOCK --}}
-                        <details class="relative border rounded px-2 py-1">
-                            <summary class="cursor-pointer select-none summary-arrow">
-                                Gestión Stock
-                            </summary>
-
-                            <div class="absolute bg-white border rounded shadow-md mt-1 w-64 z-10">
-                                <ul class="text-sm">
-                                    <li>
-                                        <a href="{{ route('movimientos.index') }}"
-                                            class="block px-3 py-2 hover:bg-gray-100">
-                                            📋 Ver movimientos de stock
-                                        </a>
-                                    </li>
-
-                                    <hr class="my-1">
-
-                                    <li>
-                                        <a href="{{ route('movimientos.export.pdf') }}"
-                                            class="block px-3 py-2 hover:bg-gray-100">
-                                            🧾 Exportar movimientos (PDF)
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ route('movimientos.export.excel') }}"
-                                            class="block px-3 py-2 hover:bg-gray-100">
-                                            📊 Exportar movimientos (Excel)
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </details>
-
-
-                        {{-- 🔹 Botón crear venta --}}
-                        <a href="{{ route('ventas.create') }}" class="text-gray-500 hover:text-green-600 transition"
-                            title="Nueva Venta">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                        </a>
-
-                        {{-- Script para formatear números con puntos --}}
+                {{-- Script AJAX para búsqueda dinámica en Ventas --}}
                         <script>
-                            document.addEventListener('input', function(e) {
-                                if (e.target.classList.contains('formatear-numero')) {
-                                    let value = e.target.value.replace(/\./g, ''); // Quita puntos
-                                    value = value.replace(/\D/g, ''); // Solo números
+                            const ventasBusquedaUrl = "{{ route('ventas.busqueda') }}";
 
-                                    if (value) {
-                                        value = Number(value).toLocaleString('es-ES'); // Pone puntos automáticamente
-                                    }
+                            document.addEventListener('DOMContentLoaded', () => {
+                                const input = document.getElementById('searchVentas');
+                                const tabla = document.querySelector('table tbody');
+                                if (!input || !tabla) return;
 
-                                    e.target.value = value;
-                                }
+                                // Helper para badges (igual que en Movimientos)
+                                const renderBadge = (type, text) => {
+                                    const colors = {
+                                        success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                                        danger:  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                                        warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                                        info:    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                                        gray:    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                    };
+                                    return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[type] || colors.gray}">
+                                                ${text}
+                                            </span>`;
+                                };
+
+                                let timeout = null;
+
+                                input.addEventListener('input', function () {
+                                    clearTimeout(timeout);
+                                    const valor = this.value.trim();
+
+                                    timeout = setTimeout(() => {
+
+                                        // Si se borra el texto → volver a index normal
+                                        if (valor === '') {
+                                            window.location.href = "{{ route('ventas.index') }}";
+                                            return;
+                                        }
+
+                                        // Mensaje de "Buscando..."
+                                        tabla.innerHTML = `
+                                            <tr>
+                                                <td colspan="10" class="text-center py-4 text-gray-400">
+                                                    Buscando...
+                                                </td>
+                                            </tr>`;
+
+                                        // Mantener otros filtros de la URL si los hubiera
+                                        const params = new URLSearchParams(window.location.search);
+                                        params.set('search', valor);
+
+                                        fetch(ventasBusquedaUrl + "?" + params.toString())
+                                            .then(res => res.json())
+                                            .then(data => {
+                                                tabla.innerHTML = '';
+
+                                                if (data.length === 0) {
+                                                    tabla.innerHTML = `
+                                                        <tr>
+                                                            <td colspan="10" class="text-center py-4 text-gray-500">
+                                                                No se encontraron ventas
+                                                            </td>
+                                                        </tr>`;
+                                                    return;
+                                                }
+
+                                                data.forEach((v) => {
+                                                    // Cliente
+                                                    const cliente = v.cliente_relacion
+                                                        ? v.cliente_relacion.nombre
+                                                        : '—';
+
+                                                    // Producto → primer detalle
+                                                    const producto = v.detalles && v.detalles.length > 0 && v.detalles[0].producto
+                                                        ? v.detalles[0].producto.nombre
+                                                        : '—';
+
+                                                    // Cantidad → primer detalle
+                                                    const cantidad = v.detalles && v.detalles.length > 0 && typeof v.detalles[0].cantidad !== 'undefined'
+                                                        ? v.detalles[0].cantidad
+                                                        : 0;
+
+                                                    // Fecha
+                                                    const fecha = v.fecha
+                                                        ? new Date(v.fecha).toLocaleDateString("es-PY")
+                                                        : "—";
+
+                                                    // Badge método de pago
+                                                    let metodoBadge = 'gray';
+                                                    if (v.metodo_pago === 'Efectivo') {
+                                                        metodoBadge = 'success';
+                                                    } else if (v.metodo_pago === 'Tarjeta' || v.metodo_pago === 'Transferencia') {
+                                                        metodoBadge = 'info';
+                                                    }
+
+                                                    // Badge estado
+                                                    let estadoBadge = 'gray';
+                                                    if (v.estado === 'Pagado') {
+                                                        estadoBadge = 'success';
+                                                    } else if (v.estado === 'Pendiente') {
+                                                        estadoBadge = 'warning';
+                                                    } else if (v.estado === 'Anulado') {
+                                                        estadoBadge = 'danger';
+                                                    }
+
+                                                    // Badge cantidad (misma lógica que en Blade)
+                                                    const cantBadgeType =
+                                                        cantidad == 0 ? 'danger' :
+                                                        cantidad <= 5 ? 'danger' :
+                                                        cantidad <= 10 ? 'warning' :
+                                                        'success';
+
+                                                    tabla.innerHTML += `
+                                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duración-200">
+                                                            
+                                                            <!-- ID -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                ${v.id}
+                                                            </td>
+
+                                                            <!-- Fecha -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                ${fecha}
+                                                            </td>
+
+                                                            <!-- Cliente -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                ${cliente}
+                                                            </td>
+
+                                                            <!-- Producto -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                ${producto}
+                                                            </td>
+
+                                                            <!-- Cantidad con badge -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                ${renderBadge(cantBadgeType, cantidad)}
+                                                            </td>
+
+                                                            <!-- Precio Unitario -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                ${
+                                                                    v.detalles && v.detalles.length > 0 && v.detalles[0].precio_unitario
+                                                                        ? "Gs. " + Number(v.detalles[0].precio_unitario).toLocaleString("es-PY")
+                                                                        : "—"
+                                                                }
+                                                            </td>
+
+                                                            <!-- Total -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900 dark:text-white">
+                                                                ${
+                                                                    v.total
+                                                                        ? "Gs. " + Number(v.total).toLocaleString("es-PY")
+                                                                        : "Gs. 0"
+                                                                }
+                                                            </td>
+
+                                                            <!-- Método de pago -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                                ${renderBadge(metodoBadge, v.metodo_pago || '—')}
+                                                            </td>
+
+                                                            <!-- Estado -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                                ${renderBadge(estadoBadge, v.estado || '—')}
+                                                            </td>
+
+                                                            <!-- Acciones (vacío en búsqueda AJAX) -->
+                                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-400">
+                                                                —
+                                                            </td>
+                                                        </tr>
+                                                    `;
+                                                });
+                                            })
+                                            .catch(err => console.error("Error en búsqueda:", err));
+                                    }, 300);
+                                });
                             });
                         </script>
 
-                    </form> {{-- 👈 aquí cerramos el form de filtros --}}
+                {{-- Tabla de Ventas --}}
+@if ($ventas->isEmpty())
+    <p class="p-4 text-center text-gray-500 dark:text-gray-400">
+        No hay ventas registradas.
+    </p>
+@else
+    <div class="overflow-x-auto">
+        <x-table :headers="['ID', 'Fecha', 'Cliente', 'Producto', 'Cant.', 'Precio', 'Total', 'Método', 'Estado', 'Acciones']">
+            @foreach ($ventas as $venta)
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-xs md:text-sm"
+                    x-data="{ open: false }">
 
-                </div> {{-- 👈 aquí cerrás el div "mb-4 flex justify-between ..." --}}
+                    {{-- ID --}}
+                    <td class="px-3 py-3 text-center">
+                        {{ $venta->id }}
+                    </td>
 
-                {{-- Si no hay ventas --}}
-                @if ($ventas->isEmpty())
-                    <p class="p-4 text-center text-gray-500">
-                        No hay ventas registradas.
-                    </p>
-                @else
-                    {{-- Tabla principal --}}
-                    <table class="min-w-full border border-gray-200 rounded">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-2 border text-center">ID</th>
-                                <th class="px-4 py-2 border">Cliente</th>
-                                <th class="px-4 py-2 border">Producto</th>
-                                <th class="px-4 py-2 border text-center">Cantidad</th>
-                                <th class="px-4 py-2 border text-right">Precio Unitario</th>
-                                <th class="px-4 py-2 border text-right">Total</th>
-                                <th class="px-4 py-2 border text-center">Método de pago</th>
-                                <th class="px-4 py-2 border text-center">Estado</th>
-                                <th class="px-4 py-2 border text-center">Fecha</th>
-                                <th class="px-4 py-2 border text-center">Acciones</th>
-                            </tr>
-                        </thead>
+                    {{-- Fecha (sin nowrap) --}}
+                    <td class="px-3 py-3 text-center">
+                        {{ $venta->fecha ? $venta->fecha->format('d/m/Y') : '-' }}
+                    </td>
 
-                        <tbody>
-                            @foreach ($ventas as $venta)
-                                {{-- Igual que productos: hover suave / fondo rojo si está anulado --}}
-                                <tr class="hover:bg-gray-50 {{ $venta->estado === 'Anulado' ? 'hover:bg-gray-50' : '' }}"
-                                    x-data="{ open: false }">
+                    {{-- Cliente (sin min-w, con wrap) --}}
+                    <td class="px-3 py-3 text-center break-words max-w-[140px]">
+                        {{ $venta->clienteRelacion->nombre ?? '-' }}
+                    </td>
 
-                                    {{-- ID --}}
-                                    <td class="px-4 py-2 border text-gray-700 font-medium text-center">
-                                        {{ $venta->id }}
-                                    </td>
+                    {{-- Producto (sin min-w, con wrap) --}}
+                    <td class="px-3 py-3 text-center break-words max-w-[140px]">
+                        {{ $venta->productoRelacion->nombre ?? '-' }}
+                    </td>
 
-                                    {{-- Cliente --}}
-                                    <td class="px-4 py-2 border">
-                                        {{ $venta->clienteRelacion->nombre ?? '—' }}
-                                    </td>
+                    {{-- Cantidad --}}
+                    <td class="px-3 py-3 text-center">
+                        @php
+                            $stockType = 'success';
+                            if ($venta->cantidad_productos == 0) $stockType = 'danger';
+                            elseif ($venta->cantidad_productos <= 5) $stockType = 'danger';
+                            elseif ($venta->cantidad_productos <= 10) $stockType = 'warning';
+                        @endphp
+                        <x-badge :type="$stockType">
+                            {{ $venta->cantidad_productos }}
+                        </x-badge>
+                    </td>
 
-                                    {{-- Producto --}}
-                                    <td class="px-4 py-2 border">
-                                        {{ $venta->productoRelacion->nombre ?? '—' }}
-                                    </td>
+                    {{-- Precio Unitario (sin nowrap) --}}
+                    <td class="px-3 py-3 text-center">
+                        @if ($venta->detalles->first())
+                            Gs. {{ number_format($venta->detalles->first()->precio_unitario, 0, ',', '.') }}
+                        @else
+                            —
+                        @endif
+                    </td>
 
-                                    {{-- Cantidad (badge como en productos) --}}
-                                    <td class="px-4 py-2 border text-center font-semibold text-gray-800">
-                                        @php
-                                            $cant = $venta->cantidad_productos;
+                    {{-- Total (sin nowrap, pero a la derecha) --}}
+                    <td class="px-3 py-3 text-right font-bold text-gray-900 dark:text-white">
+                        Gs. {{ number_format($venta->total, 0, ',', '.') }}
+                    </td>
 
-                                            if ($cant == 0) {
-                                                $texto = 'Agotado';
-                                                $clase = 'bg-red-100 text-red-700';
-                                            } elseif ($cant <= 5) {
-                                                $texto = $cant;
-                                                $clase = 'bg-red-100 text-red-700';
-                                            } elseif ($cant <= 10) {
-                                                $texto = $cant;
-                                                $clase = 'bg-yellow-100 text-yellow-700';
-                                            } else {
-                                                $texto = $cant;
-                                                $clase = 'bg-green-100 text-green-700';
-                                            }
-                                        @endphp
+                    {{-- Método --}}
+                    <td class="px-3 py-3 text-center">
+                        @php
+                            $metodoType = match($venta->metodo_pago) {
+                                'Efectivo' => 'success',
+                                'Tarjeta', 'Transferencia' => 'info',
+                                default => 'gray'
+                            };
+                        @endphp
+                        <x-badge :type="$metodoType">
+                            {{ $venta->metodo_pago }}
+                        </x-badge>
+                    </td>
 
-                                        <span class="px-2 py-1 rounded text-sm font-medium {{ $clase }}">
-                                            {{ $texto }}
-                                        </span>
-                                    </td>
+                    {{-- Estado --}}
+                    <td class="px-3 py-3 text-center">
+                        @php
+                            $estadoType = match($venta->estado) {
+                                'Pagado' => 'success',
+                                'Pendiente' => 'warning',
+                                'Anulado' => 'danger',
+                                default => 'gray'
+                            };
+                        @endphp
+                        <x-badge :type="$estadoType">
+                            {{ $venta->estado }}
+                        </x-badge>
+                    </td>
+                                     {{-- Acciones --}}
+                    <td class="px-3 py-3 text-center">
+                        <div class="flex justify-center gap-3">
+                            {{-- Editar --}}
+                            <a href="{{ route('ventas.edit', $venta->id) }}"
+                               class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                               title="Editar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                     viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
 
-                                    {{-- Precio Unitario --}}
-                                    <td class="px-4 py-2 border text-right">
-                                        @if ($venta->detalles->first())
-                                            Gs.
-                                            {{ number_format($venta->detalles->first()->precio_unitario, 0, ',', '.') }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
+                            {{-- Devolución --}}
+                            @if ($venta->estado === 'Pagado')
+                                <a href="{{ route('ventas.devolucion.form', $venta->id) }}"
+                                   class="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                                   title="Devolución">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                         viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                    </svg>
+                                </a>
+                            @endif
 
-                                    {{-- Total --}}
-                                    <td class="px-4 py-2 border text-right font-bold text-blue-700">
-                                        Gs. {{ number_format($venta->total, 0, ',', '.') }}
-                                    </td>
+                            {{-- Eliminar --}}
+                            <button @click="open = true"
+                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                    title="Eliminar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                     viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
+                                </svg>
+                            </button>
+                        </div>
 
-                                    {{-- Método de pago --}}
-                                    <td class="px-4 py-2 border text-center">
-                                        <span
-                                            class="px-2 py-1 rounded text-sm font-medium
-                            @if ($venta->metodo_pago == 'Efectivo') bg-green-100 text-green-700
-                            @elseif ($venta->metodo_pago == 'Tarjeta') bg-blue-100 text-blue-700
-                            @elseif ($venta->metodo_pago == 'Transferencia') bg-purple-100 text-purple-700
-                            @else bg-gray-100 text-gray-600 @endif">
-                                            {{ $venta->metodo_pago ?? '—' }}
-                                        </span>
-                                    </td>
-
-                                    {{-- Estado --}}
-                                    <td class="px-4 py-2 border text-center">
-                                        @php
-                                            $estado = ucfirst($venta->estado ?? 'Desconocido');
-                                            $clase = match (strtolower($venta->estado ?? '')) {
-                                                'pagado' => 'bg-green-100 text-green-700',
-                                                'pendiente' => 'bg-yellow-100 text-yellow-700',
-                                                'anulado' => 'bg-red-100 text-red-700',
-                                                default => 'bg-gray-100 text-gray-600',
-                                            };
-                                        @endphp
-
-                                        <span class="px-2 py-1 rounded text-sm font-medium {{ $clase }}">
-                                            {{ $estado }}
-                                        </span>
-                                    </td>
-
-                                    {{-- Fecha --}}
-                                    <td class="px-4 py-2 border text-sm text-gray-600 text-center">
-                                        {{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y') }}
-                                    </td>
-
-                                    {{-- Acciones --}}
-                                    <td class="px-4 py-2 border text-center">
-                                        <div class="flex flex-col items-center gap-2">
-
-                                            {{-- Editar --}}
-                                            <a href="{{ route('ventas.edit', $venta->id) }}"
-                                                class="text-gray-500 hover:text-blue-600 transition" title="Editar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                    stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M16.862 4.487l1.651 1.651a2 2 0 010 2.828l-8.486 8.486a2 2 0 01-.878.505l-3.722.931a.5.5 0 01-.606-.606l.93-3.722a2 2 0 01.506-.878l8.485-8.486a2 2 0 012.828 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M19 20H5" />
-                                                </svg>
-                                            </a>
-
-                                            {{-- Devolución --}}
-                                            @if ($venta->estado === 'Pagado')
-                                                <a href="{{ route('ventas.devolucion.form', $venta->id) }}"
-                                                    class="text-yellow-500 hover:text-yellow-600 transition"
-                                                    title="Registrar devolución">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                                                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                        stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0014-7V9M19 5a9 9 0 00-14 7v3" />
-                                                    </svg>
-                                                </a>
-                                            @endif
-
-                                            {{-- Eliminar --}}
-                                            <button @click="open = true"
-                                                class="text-red-600 hover:text-red-800 transition" title="Eliminar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                    stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
-                                                </svg>
-                                            </button>
-                                        </div>
-
-                                        {{-- Modal de confirmación (DENTRO del x-data de la fila) --}}
-                                        <div x-show="open" x-cloak
-                                            class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                                            <div class="bg-white rounded-lg shadow-lg p-6 w-96">
-                                                <h2 class="text-lg font-semibold text-gray-800">
-                                                    ⚠️ Confirmar eliminación
-                                                </h2>
-                                                <p class="mt-2 text-sm text-gray-600">
-                                                    ¿Seguro que quieres eliminar esta venta? Esta acción no se puede
-                                                    deshacer.
-                                                </p>
-                                                <div class="mt-4 flex justify-end gap-3">
-                                                    <button @click="open = false"
-                                                        class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
-                                                        ❌ Cancelar
-                                                    </button>
-                                                    <form action="{{ route('ventas.destroy', $venta->id) }}"
-                                                        method="POST">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit"
-                                                            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                                                            ✔️ Confirmar
-                                                        </button>
-                                                    </form>
+                                        {{-- Modal Confirmación --}}
+                                        <div x-show="open" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                                            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                <div x-show="open" @click="open = false" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                                <div x-show="open" class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                                        <div class="sm:flex sm:items-start">
+                                                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                                                <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                                </svg>
+                                                            </div>
+                                                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                                                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100" id="modal-title">Eliminar Venta</h3>
+                                                                <div class="mt-2">
+                                                                    <p class="text-sm text-gray-500 dark:text-gray-400">¿Estás seguro de que deseas eliminar esta venta? Esta acción no se puede deshacer.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                                        <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">Eliminar</button>
+                                                        </form>
+                                                        <button @click="open = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Cancelar</button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-
                                     </td>
                                 </tr>
                             @endforeach
-                        </tbody>
-                    </table>
+                        </x-table>
+                    </div>
+
+                    {{-- Paginación --}}
+                    <div class="mt-4">
+                        {{ $ventas->links() }}
+                    </div>
                 @endif
-
-                {{-- 🔹 Resumen + paginación --}}
-@php
-    // Detectamos si $ventas es paginador o colección simple (verTodo)
-    if ($ventas instanceof \Illuminate\Pagination\LengthAwarePaginator) {
-        $pageCantidadVentas = $ventas->count();          // cuántas se muestran en esta página
-        $pageTotalVentas    = $ventas->sum('total');      // suma de los "total" de esta página
-        $mostrandoDesde     = $ventas->firstItem();
-        $mostrandoHasta     = $ventas->lastItem();
-        $totalResultados    = $ventas->total();
-    } else {
-        // verTodo: colección simple
-        $pageCantidadVentas = $ventas->count();          
-        $pageTotalVentas    = $ventas->sum('total');      
-        $totalResultados    = $ventas->count();
-
-        if ($totalResultados > 0) {
-            $mostrandoDesde = 1;
-            $mostrandoHasta = $totalResultados;
-        } else {
-            $mostrandoDesde = 0;
-            $mostrandoHasta = 0;
-        }
-    }
-
-    // Copiar parámetros usando una sola vez (para botones)
-    $q = request()->query();
-@endphp
-
-<div
-    class="mt-4 p-3 bg-gray-50 rounded-lg shadow-sm flex justify-between items-start text-sm text-gray-700">
-
-    {{-- Columna izquierda --}}
-    <div class="flex flex-col gap-1">
-        <div>
-            @if ($totalResultados > 0)
-                Mostrando
-                <span class="font-bold">{{ $mostrandoDesde }}</span>
-                a
-                <span class="font-bold">{{ $mostrandoHasta }}</span>
-                de
-                <span class="font-bold">{{ $totalResultados }}</span>
-                resultados
-            @else
-                Mostrando <span class="font-bold">0</span> resultados
-            @endif
-        </div>
-
-        <div class="flex items-center gap-1">
-            📦 <span>Ventas totales mostradas:
-                <span class="font-bold text-gray-800">{{ $pageCantidadVentas }}</span>
-            </span>
-        </div>
-
-        <div class="flex items-center gap-1">
-            💰 <span>Valor total mostrado:
-                <span class="font-bold text-blue-700">
-                    Gs. {{ number_format($pageTotalVentas, 0, ',', '.') }}
-                </span>
-            </span>
+            </x-card>
         </div>
     </div>
-
-    {{-- Columna derecha: paginación / ver todo --}}
-    <div class="flex items-center">
-
-        {{-- PAGINACIÓN — solo si NO estamos en verTodo --}}
-        @if ($ventas instanceof \Illuminate\Pagination\LengthAwarePaginator)
-            @php
-                // Evita que Laravel incluya verTodo dentro del paginador
-                $paginationQuery = $q;
-                unset($paginationQuery['verTodo']);
-            @endphp
-
-            {{ $ventas->appends($paginationQuery)->links() }}
-        @endif
-
-        {{-- BOTÓN VER PAGINADO (si SÍ está activo) --}}
-        @if (request()->has('verTodo'))
-            @php
-                unset($q['verTodo']);
-                $urlSinVerTodo = request()->url() . (empty($q) ? '' : '?' . http_build_query($q));
-            @endphp
-
-            <a href="{{ $urlSinVerTodo }}"
-              class="ml-2 relative inline-flex items-center px-3 py-2 text-sm font-medium 
-                   text-gray-700 bg-white border border-gray-300 leading-5 
-                   hover:text-gray-500 focus:z-10 focus:outline-none focus:ring ring-gray-300 
-                   focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition 
-                   ease-in-out duration-150 dark:bg-gray-800 dark:border-gray-600 
-                   dark:text-gray-400 dark:hover:text-gray-300 dark:active:bg-gray-700 
-                   dark:focus:border-blue-800 rounded-md">
-                Ver paginado
-            </a>
-        @endif
-
-    </div>
-</div>
-</div> {{-- cierra tarjeta principal --}}
-</div> {{-- cierra max-w-7xl --}}
-</div> {{-- cierra py-6 --}}
 </x-app-layout>
