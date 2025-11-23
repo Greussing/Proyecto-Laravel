@@ -28,13 +28,16 @@ class MovimientoStockController extends Controller
             ->filtrarPorTipo($request->input('tipo'))
             ->ordenar($request->input('ordenar'));
 
-        // 📄 Paginación / Ver todo
-        $perPage = $request->has('verTodo') ? $query->count() : 20;
-        $perPage = $perPage > 0 ? $perPage : 20;
+        // 🔹 verTodo: true si viene verTodo=1, true, on, etc.
+        $verTodo   = $request->boolean('verTodo');
+        $porPagina = $verTodo ? $query->count() : 10;
 
-        $movimientos = $query->paginate($perPage)->withQueryString();
+        // Evitar 0
+        $porPagina = $porPagina > 0 ? $porPagina : 10;
 
-        return view('movimientos.index', compact('movimientos'));
+        $movimientos = $query->paginate($porPagina)->withQueryString();
+
+        return view('movimientos.index', compact('movimientos', 'verTodo'));
     }
     
     /**

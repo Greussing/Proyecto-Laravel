@@ -13,25 +13,24 @@ class HistorialController extends Controller
         protected ExportService $exportService
     ) {}
 
-    public function index(Request $request)
-    {
-        // 🔹 Solo acciones de productos (NO ventas)
-        $query = Historial::with(['producto' => fn($q) => $q->withTrashed()])
-            ->soloProductos()
-            ->buscar($request->input('search'))
-            ->filtrarPorAccion($request->input('accion'))
-            ->ordenar($request->input('ordenar'));
+   public function index(Request $request)
+{
+    // 🔹 Solo acciones de productos (NO ventas)
+    $query = Historial::with(['producto' => fn($q) => $q->withTrashed(), 'usuario'])
+        ->soloProductos()
+        ->buscar($request->input('search'))
+        ->filtrarPorAccion($request->input('accion'))
+        ->ordenar($request->input('ordenar'));
 
-        // 🔁 Ver todo / paginado
-        $verTodo = $request->boolean('verTodo');
-        $perPage = $verTodo ? $query->count() : 15;
-        $perPage = $perPage > 0 ? $perPage : 15;
+    // 🔁 Ver todo / paginado
+    $verTodo   = $request->boolean('verTodo');
+    $porPagina = $verTodo ? $query->count() : 15;
+    $porPagina = $porPagina > 0 ? $porPagina : 15;
 
-        $historiales = $query->paginate($perPage)->withQueryString();
+    $historial = $query->paginate($porPagina)->withQueryString();
 
-        return view('historial.index', compact('historiales', 'verTodo'));
-    }
-
+    return view('historial.index', compact('historial', 'verTodo'));
+}
     /*
     |--------------------------------------------------------------------------
     | BUSQUEDA AJAX → SOLO productos (no ventas)

@@ -1,481 +1,311 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-white">
-            Movimientos de Stock
+        <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+            {{ __('Movimientos de Stock') }}
         </h2>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            <div class="bg-white shadow rounded-lg p-6">
+            {{-- Mensaje de éxito --}}
+            @if (session('success'))
+                <div class="mb-4 text-green-700 bg-green-100 dark:bg-green-900 dark:text-green-300 p-4 rounded">
+                    {{ session('success') }}
+                </div>
+            @endif
 
-                {{-- TOOLBAR: FILTROS + ACCIONES --}}
-                <div class="mb-4">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <x-card>
+                {{-- Contenedor filtros + botones exportar --}}
+                <div class="flex items-center justify-between mb-6 flex-wrap gap-4 w-full">
 
-                        {{-- FILTROS (izquierda) --}}
-                        <form method="GET" action="{{ route('movimientos.index') }}"
-                              class="flex flex-wrap items-center gap-3">
+                    {{-- Filtros de búsqueda --}}
+                    <form method="GET" action="{{ route('movimientos.index') }}" class="flex flex-wrap gap-2 items-center">
 
-                            {{-- BUSCADOR --}}
-                            <div class="relative">
-    <!-- Botón lupa -->
-    <button type="submit"
-        class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
-        </svg>
-    </button>
+                        {{-- Buscar por producto --}}
+                        <div class="relative">
+                            <button type="submit" class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+                                </svg>
+                            </button>
 
-    <!-- Input búsqueda -->
-    <input type="text" name="search" id="searchMovimientos"
-        placeholder="Buscar por Producto"
-        value="{{ request('search') }}"
-        class="border rounded pl-9 pr-10 py-1 w-60 md:w-72 focus:ring-2 focus:ring-blue-500 outline-none"
-        oninput="toggleSearchMovimientos(this)">
-
-    <!-- Botón limpiar -->
-    <div id="searchMovimientos-icons"
-        class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 {{ request('search') ? '' : 'hidden' }}">
-        <a href="{{ route('movimientos.index', request()->except(['search', 'page'])) }}"
-            class="text-red-500 hover:text-red-700 font-bold">×</a>
-    </div>
-</div>
-
-{{-- Script AJAX para búsqueda dinámica en MOVIMIENTOS --}}
-<script>
-    const movimientosBusquedaUrl = "{{ route('movimientos.busqueda') }}";
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const input = document.getElementById('searchMovimientos');
-        const tabla = document.querySelector('table tbody');
-        let timeout = null;
-
-        if (!input || !tabla) return;
-
-        input.addEventListener('input', function () {
-            clearTimeout(timeout);
-            const valor = this.value.trim();
-
-            timeout = setTimeout(() => {
-
-                // Si se borra todo → volver al index normal
-                if (valor === '') {
-                    window.location.href = "{{ route('movimientos.index') }}";
-                    return;
-                }
-
-                // Mensaje "Buscando..."
-                tabla.innerHTML = `
-                    <tr>
-                        <td colspan="10" class="text-center py-4 text-gray-400">
-                            Buscando...
-                        </td>
-                    </tr>`;
-
-                // Mantener otros filtros (tipo, ordenar, etc.)
-                const params = new URLSearchParams(window.location.search);
-                params.set('search', valor);
-
-                fetch(movimientosBusquedaUrl + "?" + params.toString())
-                    .then(res => res.json())
-                    .then(data => {
-                        tabla.innerHTML = '';
-
-                        if (data.length === 0) {
-                            tabla.innerHTML = `
-                                <tr>
-                                    <td colspan="10" class="text-center py-4 text-gray-500">
-                                        No se encontraron movimientos
-                                    </td>
-                                </tr>`;
-                            return;
-                        }
-
-                        data.forEach((m) => {
-
-                            // Cliente
-                            const cliente = m.cliente_relacion
-                                ? m.cliente_relacion.nombre
-                                : 'N/A';
-
-                            // Usuario
-                            const usuario = m.usuario
-                                ? m.usuario.name
-                                : '_';
-
-                            // Producto
-                            const producto = m.producto
-                                ? m.producto.nombre
-                                : 'N/A';
-
-                            // Label del tipo
-                            const labelTipos = {
-                                venta: 'Venta',
-                                devolucion: 'Devolución',
-                                anulacion: 'Eliminación',
-                                edicion: 'Edición',
-                            };
-
-                            // Hover por tipo (misma lógica que en Blade)
-                            let rowHover = 'hover:bg-gray-50';
-                            switch (m.tipo) {
-                                case 'venta':
-                                    rowHover = 'hover:bg-green-50';
-                                    break;
-                                case 'devolucion':
-                                    rowHover = 'hover:bg-blue-50';
-                                    break;
-                                case 'anulacion':
-                                    rowHover = 'hover:bg-red-50';
-                                    break;
-                                case 'edicion':
-                                    rowHover = 'hover:bg-yellow-50';
-                                    break;
-                            }
-
-                            // Badge de tipo
-                            let tipoClass = 'bg-gray-100 text-gray-700';
-                            switch (m.tipo) {
-                                case 'venta':
-                                    tipoClass = 'bg-green-100 text-green-700';
-                                    break;
-                                case 'devolucion':
-                                    tipoClass = 'bg-blue-100 text-blue-700';
-                                    break;
-                                case 'anulacion':
-                                    tipoClass = 'bg-red-100 text-red-700';
-                                    break;
-                                case 'edicion':
-                                    tipoClass = 'bg-yellow-100 text-yellow-700';
-                                    break;
-                            }
-
-                            // Cantidad badge
-                            let cantClass = 'bg-gray-100 text-gray-700';
-                            if (m.cantidad < 0) {
-                                cantClass = 'bg-red-100 text-red-700';
-                            } else if (m.cantidad > 0) {
-                                cantClass = 'bg-green-100 text-green-700';
-                            }
-
-                            // Fecha
-                            const fecha = m.created_at
-                                ? new Date(m.created_at).toLocaleString('es-PY')
-                                : '—';
-
-                            tabla.innerHTML += `
-<tr class="${rowHover}">
-
-    <!-- ID -->
-    <td class="border px-4 py-2 text-center text-xs text-gray-500">
-        #${m.id}
-    </td>
-
-    <!-- CLIENTE -->
-    <td class="border px-4 py-2">
-        <div class="text-sm font-semibold text-gray-800">
-            ${cliente}
-        </div>
-    </td>
-
-    <!-- USUARIO -->
-    <td class="border px-4 py-2">
-        <div class="text-sm text-gray-800">
-            ${usuario}
-        </div>
-    </td>
-
-    <!-- PRODUCTO -->
-    <td class="border px-4 py-2 text-gray-800 text-sm">
-        ${producto}
-    </td>
-
-    <!-- TIPO -->
-    <td class="border px-4 py-2 text-center">
-        <span class="px-2 py-1 rounded-full text-xs font-semibold ${tipoClass}">
-            ${labelTipos[m.tipo] ?? (m.tipo ? m.tipo.charAt(0).toUpperCase() + m.tipo.slice(1) : '—')}
-        </span>
-    </td>
-
-    <!-- CANTIDAD -->
-    <td class="border px-4 py-2 text-center">
-        <span class="px-2 py-1 rounded text-xs font-semibold ${cantClass}">
-            ${m.cantidad ?? 0}
-        </span>
-    </td>
-
-    <!-- STOCK ANTES -->
-    <td class="border px-4 py-2 text-center text-sm">
-        ${m.stock_antes ?? '—'}
-    </td>
-
-    <!-- STOCK DESPUÉS -->
-    <td class="border px-4 py-2 text-center text-sm font-bold">
-        ${m.stock_despues ?? '—'}
-    </td>
-
-    <!-- DETALLE -->
-    <td class="border px-4 py-2 text-sm">
-        ${m.detalle ?? '—'}
-    </td>
-
-    <!-- FECHA -->
-    <td class="border px-4 py-2 text-center text-sm text-gray-600">
-        ${fecha}
-    </td>
-
-</tr>`;
-                        });
-                    })
-                    .catch(err => console.error("Error en búsqueda movimientos:", err));
-            }, 300);
-        });
-    });
-</script>
-
-                            {{-- FILTRO POR TIPO (una sola opción a la vez) --}}
-                            @php
-                                $tipos = [
-                                    'venta'      => 'Venta',
-                                    'devolucion' => 'Devolución',
-                                    'anulacion'  => 'Eliminación',
-                                    'edicion'    => 'Edición',
-                                ];
-
-                                // ahora esperamos un string tipo=venta (no tipo[]=)
-                                $tipoSeleccionado = request('tipo');
-                            @endphp
-
-                            <details class="relative border rounded px-2 py-1">
-                                <summary
-                                    class="cursor-pointer select-none summary-arrow {{ $tipoSeleccionado ? 'text-blue-600 font-bold' : '' }}">
-                                    @if ($tipoSeleccionado && isset($tipos[$tipoSeleccionado]))
-                                        Tipo: {{ $tipos[$tipoSeleccionado] }}
-                                        <a href="{{ route('movimientos.index', request()->except(['tipo', 'page'])) }}"
-                                            class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
-                                    @else
-                                        Tipo
-                                    @endif
-                                </summary>
-
-                                <div class="absolute bg-white border rounded shadow-md mt-1 p-2 w-52 z-10 space-y-1">
-                                    @foreach ($tipos as $clave => $label)
-                                        <label class="flex items-center">
-                                            {{-- RADIO: solo una opción --}}
-                                            <input type="radio" name="tipo" value="{{ $clave }}"
-                                                {{ $tipoSeleccionado === $clave ? 'checked' : '' }}
-                                                onchange="this.form.submit()">
-                                            <span class="ml-2">{{ $label }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </details>
-
-                            {{-- ORDENAR --}}
-                            @php
-                                $ordenes = [
-                                    'fecha_desc'    => 'Fecha (recientes)',
-                                    'fecha_asc'     => 'Fecha (antiguas)',
-                                    'cantidad_desc' => 'Cantidad (mayor)',
-                                    'cantidad_asc'  => 'Cantidad (menor)',
-                                ];
-                                $ordenActual = request('ordenar') ? $ordenes[request('ordenar')] ?? 'Ordenar' : 'Ordenar';
-                            @endphp
-
-                            <details class="relative border rounded px-2 py-1">
-                                <summary
-                                    class="cursor-pointer select-none summary-arrow {{ request('ordenar') ? 'text-blue-600 font-bold' : '' }}">
-                                    {{ $ordenActual }}
-                                    @if (request('ordenar'))
-                                        <a href="{{ route('movimientos.index', request()->except(['ordenar', 'page'])) }}"
-                                            class="ml-2 text-red-500 font-bold hover:text-red-700">✕</a>
-                                    @endif
-                                </summary>
-                                <div class="absolute bg-white border rounded shadow-md mt-1 w-52 z-10">
-                                    <ul>
-                                        @foreach ($ordenes as $valor => $texto)
-                                            <li>
-                                                <a href="{{ route('movimientos.index', array_merge(request()->except(['ordenar', 'page']), ['ordenar' => $valor])) }}"
-                                                    class="block px-3 py-1 hover:bg-gray-100">
-                                                    {{ $texto }}
-                                                </a>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            </details>
-                        </form>
-
-                        {{-- ACCIONES (derecha) --}}
-                        <div class="flex flex-col items-end gap-1">
-                            <div class="text-sm text-gray-500">
-                                Total de movimientos: {{ $movimientos->total() }}
-                            </div>
-                            <div class="flex flex-wrap gap-2">
-                                <a href="{{ route('movimientos.export.pdf', request()->all()) }}"
-                                    class="inline-flex items-center px-3 py-1.5 text-sm rounded bg-red-600 text-white hover:bg-red-700">
-                                    🧾 Exportar PDF
-                                </a>
-
-                                <a href="{{ route('movimientos.export.excel', request()->all()) }}"
-                                    class="inline-flex items-center px-3 py-1.5 text-sm rounded bg-green-600 text-white hover:bg-green-700">
-                                    📊 Exportar Excel
-                                </a>
+                            <input type="text" name="search" placeholder="Buscar por Producto"
+                                value="{{ request('search') }}"
+                                class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm pl-9 pr-8 py-2 w-60 md:w-72"
+                                oninput="toggleSearchIcons(this)">
+                            
+                            <div id="search-icons" class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 {{ request('search') ? '' : 'hidden' }}">
+                                <a href="{{ route('movimientos.index', request()->except(['search', 'page'])) }}" class="text-red-500 hover:text-red-700 font-bold">×</a>
                             </div>
                         </div>
+
+                        {{-- Script búsqueda dinámica (AJAX) adaptado para Movimientos --}}
+                        <script>
+                            const busquedaUrl = "{{ route('movimientos.busqueda') }}";
+                            function toggleSearchIcons(input) {
+                                const icons = document.getElementById('search-icons');
+                                if (input.value.trim() !== '') {
+                                    icons.classList.remove('hidden');
+                                } else {
+                                    icons.classList.add('hidden');
+                                }
+                            }
+
+                            document.addEventListener('DOMContentLoaded', () => {
+                                const input = document.querySelector('input[name="search"]');
+                                const tablaBody = document.querySelector('table tbody');
+                                let timeout = null;
+
+                                if(input && tablaBody) {
+                                    input.addEventListener('input', function() {
+                                        clearTimeout(timeout);
+                                        const valor = this.value.trim();
+
+                                        timeout = setTimeout(() => {
+                                            if (valor === '') {
+                                                window.location.reload();
+                                                return;
+                                            }
+
+                                            tablaBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-gray-400">Buscando...</td></tr>`;
+
+                                            // Mantener otros filtros
+                                            const params = new URLSearchParams(window.location.search);
+                                            params.set('search', valor);
+
+                                            fetch(busquedaUrl + "?" + params.toString())
+                                                .then(res => res.json())
+                                                .then(data => {
+                                                    tablaBody.innerHTML = '';
+                                                    if (data.length === 0) {
+                                                        tablaBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-gray-500">No se encontraron movimientos</td></tr>`;
+                                                        return;
+                                                    }
+                                                    data.forEach((m) => {
+                                                        // Helpers para badges y textos
+                                                        const labelTipos = {
+                                                            venta: 'Venta',
+                                                            devolucion: 'Devolución',
+                                                            anulacion: 'Eliminación',
+                                                            edicion: 'Edición',
+                                                        };
+                                                        const tipoLabel = labelTipos[m.tipo] ?? (m.tipo ? m.tipo.charAt(0).toUpperCase() + m.tipo.slice(1) : '—');
+                                                        
+                                                        let tipoBadge = 'gray';
+                                                        switch (m.tipo) {
+                                                            case 'venta': tipoBadge = 'success'; break;
+                                                            case 'devolucion': tipoBadge = 'info'; break;
+                                                            case 'anulacion': tipoBadge = 'danger'; break;
+                                                            case 'edicion': tipoBadge = 'warning'; break;
+                                                        }
+
+                                                        let cantBadge = 'gray';
+                                                        if (m.cantidad < 0) cantBadge = 'danger';
+                                                        else if (m.cantidad > 0) cantBadge = 'success';
+
+                                                        const fecha = m.created_at ? new Date(m.created_at).toLocaleDateString('es-PY') + ' ' + new Date(m.created_at).toLocaleTimeString('es-PY', {hour: '2-digit', minute:'2-digit'}) : '—';
+                                                        const cliente = m.cliente_relacion ? m.cliente_relacion.nombre : 'N/A';
+                                                        const usuario = m.usuario ? m.usuario.name : '_';
+                                                        const producto = m.producto ? m.producto.nombre : 'N/A';
+
+                                                        // Badge component simulation for JS
+                                                        const renderBadge = (type, text) => {
+                                                            const colors = {
+                                                                success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                                                                danger: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                                                                warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                                                                info: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                                                                gray: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                                            };
+                                                            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[type] || colors.gray}">${text}</span>`;
+                                                        };
+
+                                                        tablaBody.innerHTML += `
+                                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-xs md:text-sm">
+                                                                <td class="px-3 py-3 text-center">${m.id}</td>
+                                                                <td class="px-3 py-3 text-center break-words max-w-[140px]">${cliente}</td>
+                                                                <td class="px-3 py-3 text-center break-words max-w-[120px]">${usuario}</td>
+                                                                <td class="px-3 py-3 text-center break-words max-w-[140px]">${producto}</td>
+                                                                <td class="px-3 py-3 text-center">${renderBadge(tipoBadge, tipoLabel)}</td>
+                                                                <td class="px-3 py-3 text-center">${renderBadge(cantBadge, m.cantidad)}</td>
+                                                                <td class="px-3 py-3 text-center">${m.stock_antes ?? '—'}</td>
+                                                                <td class="px-3 py-3 text-center">${m.stock_despues ?? '—'}</td>
+                                                                <td class="px-3 py-3 text-left break-words max-w-[200px]">${m.detalle ?? '—'}</td>
+                                                                <td class="px-3 py-3 text-center whitespace-nowrap">${fecha}</td>
+                                                            </tr>`;
+                                                    });
+                                                })
+                                                .catch(err => console.error('Error en búsqueda:', err));
+                                        }, 300);
+                                    });
+                                }
+                            });
+                        </script>
+
+                        {{-- Filtro Tipo --}}
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                                @if (request('tipo'))
+                                    @php
+                                        $tiposLabel = [
+                                            'venta' => 'Venta',
+                                            'devolucion' => 'Devolución',
+                                            'anulacion' => 'Eliminación',
+                                            'edicion' => 'Edición'
+                                        ];
+                                        $currentTipo = $tiposLabel[request('tipo')] ?? request('tipo');
+                                    @endphp
+                                    <span class="text-blue-600 dark:text-blue-400">Tipo: {{ $currentTipo }}</span>
+                                @else
+                                    Tipo
+                                @endif
+                                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div x-show="open" class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
+                                @php
+                                    $tipos = [
+                                        'venta'      => 'Venta',
+                                        'devolucion' => 'Devolución',
+                                        'anulacion'  => 'Eliminación',
+                                        'edicion'    => 'Edición',
+                                    ];
+                                @endphp
+                                @foreach ($tipos as $key => $label)
+                                    <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
+                                        <input type="radio" name="tipo" value="{{ $key }}"
+                                            {{ request('tipo') === $key ? 'checked' : '' }}
+                                            onchange="this.form.submit()"
+                                            class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $label }}</span>
+                                    </label>
+                                @endforeach
+                                @if (request('tipo'))
+                                    <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                                        <a href="{{ route('movimientos.index', request()->except(['tipo', 'page'])) }}" class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar filtro</a>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Ordenar --}}
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                                Ordenar
+                                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div x-show="open" class="absolute z-50 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 py-1">
+                                @php
+                                    $opciones = [
+                                        'fecha_desc'    => 'Fecha (recientes)',
+                                        'fecha_asc'     => 'Fecha (antiguas)',
+                                        'cantidad_desc' => 'Cantidad (mayor)',
+                                        'cantidad_asc'  => 'Cantidad (menor)',
+                                    ];
+                                @endphp
+                                @foreach ($opciones as $key => $label)
+                                    <a href="{{ route('movimientos.index', array_merge(request()->except(['ordenar', 'page']), ['ordenar' => $key])) }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 {{ request('ordenar') == $key ? 'bg-gray-100 dark:bg-gray-600 font-bold' : '' }}">
+                                        {{ $label }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+
+                    </form>
+
+                    {{-- Botones Exportar --}}
+                    <div class="flex gap-2">
+                        <a href="{{ route('movimientos.export.pdf', request()->all()) }}" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            PDF
+                        </a>
+                        <a href="{{ route('movimientos.export.excel', request()->all()) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Excel
+                        </a>
                     </div>
                 </div>
 
-                @php
-                    $labelTipos = [
-                        'venta'      => 'Venta',
-                        'devolucion' => 'Devolución',
-                        'anulacion'  => 'Eliminación',
-                        'edicion'    => 'Edición',
-                    ];
-                @endphp
-
-                {{-- TABLA --}}
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border border-gray-200 rounded text-sm">
-                        <thead class="bg-gray-100">
-                            <tr class="text-xs uppercase tracking-wide text-gray-600">
-                                <th class="px-4 py-2 border text-center">ID</th>
-                                <th class="px-4 py-2 border">Cliente</th>
-                                <th class="px-4 py-2 border">Usuario</th>
-                                <th class="px-4 py-2 border">Producto</th>
-                                <th class="px-4 py-2 border text-center">Tipo</th>
-                                <th class="px-4 py-2 border text-center">Cantidad</th>
-                                <th class="px-4 py-2 border text-center">Stock Antes</th>
-                                <th class="px-4 py-2 border text-center">Stock Después</th>
-                                <th class="px-4 py-2 border">Detalle</th>
-                                <th class="px-4 py-2 border text-center">Fecha</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
+                {{-- Tabla de Movimientos --}}
+                @if ($movimientos->isEmpty())
+                    <p class="p-4 text-center text-gray-500 dark:text-gray-400">
+                        No hay movimientos registrados.
+                    </p>
+                @else
+                    <div class="overflow-x-auto">
+                        <x-table :headers="['ID', 'Cliente', 'Usuario', 'Producto', 'Tipo', 'Cantidad', 'Stock Antes', 'Stock Después', 'Detalle', 'Fecha']">
                             @foreach ($movimientos as $m)
-                                @php
-                                    // Hover color por tipo
-                                    $rowHover = match ($m->tipo) {
-                                        'venta'      => 'hover:bg-green-50',
-                                        'devolucion' => 'hover:bg-blue-50',
-                                        'anulacion'  => 'hover:bg-red-50',
-                                        'edicion'    => 'hover:bg-yellow-50',
-                                        default      => 'hover:bg-gray-50',
-                                    };
-
-                                    // Badge de tipo
-                                    $tipoClass = match ($m->tipo) {
-                                        'venta'      => 'bg-green-100 text-green-700',
-                                        'devolucion' => 'bg-blue-100 text-blue-700',
-                                        'anulacion'  => 'bg-red-100 text-red-700',
-                                        'edicion'    => 'bg-yellow-100 text-yellow-700',
-                                        default      => 'bg-gray-100 text-gray-700',
-                                    };
-
-                                    // Cantidad badge
-                                    $cantClass = $m->cantidad < 0
-                                        ? 'bg-red-100 text-red-700'
-                                        : ($m->cantidad > 0
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-gray-100 text-gray-700');
-                                @endphp
-
-                                <tr class="{{ $rowHover }}">
-
-                                    {{-- ID --}}
-                                    <td class="border px-4 py-2 text-center text-xs text-gray-500">
-                                        #{{ $m->id }}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-xs md:text-sm">
+                                    <td class="px-3 py-3 text-center">
+                                        {{ $m->id }}
                                     </td>
-
-                                    {{-- CLIENTE --}}
-                                    <td class="border px-4 py-2">
-                                        <div class="text-sm font-semibold text-gray-800">
-                                            {{ $m->clienteRelacion->nombre ?? 'N/A' }}
-                                        </div>
+                                    <td class="px-3 py-3 text-center break-words max-w-[140px]">
+                                        {{ $m->clienteRelacion->nombre ?? 'N/A' }}
                                     </td>
-
-                                    {{-- USUARIO --}}
-                                    <td class="border px-4 py-2">
-                                        <div class="text-sm text-gray-800">
-                                            {{ $m->usuario->name ?? '_' }}
-                                        </div>
+                                    <td class="px-3 py-3 text-center break-words max-w-[120px]">
+                                        {{ $m->usuario->name ?? '_' }}
                                     </td>
-
-                                    {{-- PRODUCTO --}}
-                                    <td class="border px-4 py-2 text-gray-800 text-sm">
+                                    <td class="px-3 py-3 text-center break-words max-w-[140px]">
                                         {{ $m->producto->nombre ?? 'N/A' }}
                                     </td>
-
-                                    {{-- TIPO --}}
-                                    <td class="border px-4 py-2 text-center">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $tipoClass }}">
-                                            {{ $labelTipos[$m->tipo] ?? ucfirst($m->tipo) }}
-                                        </span>
+                                    <td class="px-3 py-3 text-center">
+                                        @php
+                                            $tipoLabel = match ($m->tipo) {
+                                                'venta'      => 'Venta',
+                                                'devolucion' => 'Devolución',
+                                                'anulacion'  => 'Eliminación',
+                                                'edicion'    => 'Edición',
+                                                default      => ucfirst($m->tipo),
+                                            };
+                                            $tipoBadge = match ($m->tipo) {
+                                                'venta'      => 'success',
+                                                'devolucion' => 'info',
+                                                'anulacion'  => 'danger',
+                                                'edicion'    => 'warning',
+                                                default      => 'gray',
+                                            };
+                                        @endphp
+                                        <x-badge :type="$tipoBadge">{{ $tipoLabel }}</x-badge>
                                     </td>
-
-                                    {{-- CANTIDAD --}}
-                                    <td class="border px-4 py-2 text-center">
-                                        <span class="px-2 py-1 rounded text-xs font-semibold {{ $cantClass }}">
-                                            {{ $m->cantidad }}
-                                        </span>
+                                    <td class="px-3 py-3 text-center">
+                                        @php
+                                            $cantBadge = 'gray';
+                                            if ($m->cantidad < 0) $cantBadge = 'danger';
+                                            elseif ($m->cantidad > 0) $cantBadge = 'success';
+                                        @endphp
+                                        <x-badge :type="$cantBadge">{{ $m->cantidad }}</x-badge>
                                     </td>
-
-                                    {{-- STOCK ANTES --}}
-                                    <td class="border px-4 py-2 text-center text-sm">
-                                        {{ $m->stock_antes }}
+                                    <td class="px-3 py-3 text-center">
+                                        {{ $m->stock_antes ?? '—' }}
                                     </td>
-
-                                    {{-- STOCK DESPUÉS --}}
-                                    <td class="border px-4 py-2 text-center text-sm font-bold">
-                                        {{ $m->stock_despues }}
+                                    <td class="px-3 py-3 text-center">
+                                        {{ $m->stock_despues ?? '—' }}
                                     </td>
-
-                                    {{-- DETALLE --}}
-                                    <td class="border px-4 py-2 text-sm">
-                                        {{ $m->detalle }}
+                                    <td class="px-3 py-3 text-left break-words max-w-[200px]">
+                                        {{ $m->detalle ?? '—' }}
                                     </td>
-
-                                    {{-- FECHA --}}
-                                    <td class="border px-4 py-2 text-center text-sm text-gray-600">
+                                    <td class="px-3 py-3 text-center whitespace-nowrap">
                                         {{ $m->created_at->format('d/m/Y H:i') }}
                                     </td>
                                 </tr>
                             @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                        </x-table>
+                    </div>
 
-                {{-- PAGINACIÓN + VER PAGINADO --}}
-                <div class="mt-4 flex items-center">
-                    {{ $movimientos->links() }}
-
-                    @if (request()->has('verTodo'))
-                        @php
-                            $q = request()->query();
-                            unset($q['verTodo']); // quitamos el parámetro verTodo
-                            $urlSinVerTodo = request()->url() . (empty($q) ? '' : '?' . http_build_query($q));
-                        @endphp
-
-                        <a href="{{ $urlSinVerTodo }}"
-                            class="ml-2 relative inline-flex items-center px-3 py-2 text-sm font-medium 
-                               text-gray-700 bg-white border border-gray-300 leading-5 
-                               hover:text-gray-500 focus:z-10 focus:outline-none focus:ring ring-gray-300 
-                               focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition 
-                               ease-in-out duration-150 dark:bg-gray-800 dark:border-gray-600 
-                               dark:text-gray-400 dark:hover:text-gray-300 dark:active:bg-gray-700 
-                               dark:focus:border-blue-800 rounded-md">
-                            Ver paginado
-                        </a>
-                    @endif
-                </div>
-
-            </div>
+                    {{-- Paginación --}}
+                    <div class="mt-4">
+                        {{ $movimientos->links() }}
+                    </div>
+                @endif
+            </x-card>
         </div>
     </div>
 </x-app-layout>
