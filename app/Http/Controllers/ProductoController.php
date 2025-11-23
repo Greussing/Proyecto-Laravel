@@ -9,6 +9,8 @@ use App\Models\Historial;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductoController extends Controller
 {
@@ -24,45 +26,37 @@ class ProductoController extends Controller
     /**
      * INDEX → lista de productos con filtros, orden y paginación
      */
-    public function index(Request $request)
-    {
-        // Query base con scopes encadenados
-        $query = Producto::with('categoriaRelacion')
-            ->buscar($request->input('search'))
-            ->filtrarPorCategorias($request->input('categorias') ?? $request->input('categoria'))
-            ->filtrarPorPrecio($request->input('precio_min'), $request->input('precio_max'))
-            ->filtrarPorStock($request->input('stock'))
-            ->ordenar($request->input('ordenar'));
+   public function index(Request $request)
+{
+    $query = Producto::with('categoriaRelacion')
+        ->buscar($request->input('search'))
+        ->filtrarPorCategorias($request->input('categorias') ?? $request->input('categoria'))
+        ->filtrarPorPrecio($request->input('precio_min'), $request->input('precio_max'))
+        ->filtrarPorStock($request->input('stock'))
+        ->ordenar($request->input('ordenar'));
 
-        // Clonar query para cálculos de totales de la página actual (si se quisiera total global, quitar paginación antes)
-        // Nota: En el código original, los totales eran de la "página actual". 
-        // Para mantener eso, primero paginamos.
-        
-        $verTodo   = $request->boolean('verTodo');
-        $porPagina = $verTodo ? $query->count() : 10;
-        
-        // Evitar división por cero si no hay productos
-        $porPagina = $porPagina > 0 ? $porPagina : 10;
+    // 🔹 verTodo: true si viene verTodo=1, true, on, etc.
+    $verTodo   = $request->boolean('verTodo');
+    $porPagina = $verTodo ? $query->count() : 10;
 
-        $productos = $query->paginate($porPagina)->withQueryString();
+    // Evitar 0
+    $porPagina = $porPagina > 0 ? $porPagina : 10;
 
-        // Numeración consecutiva global (calculada en vista o aquí)
-        // El original usaba un loop sobre todos los productos para poner numero_fijo, lo cual es ineficiente si hay muchos.
-        // Lo ideal es calcularlo en la vista: ($productos->currentPage() - 1) * $productos->perPage() + $loop->iteration
-        
-        // Totales de la página actual
-        $pageStockTotal = $productos->sum('cantidad');
-        $pageValorTotal = $productos->sum(fn($p) => $p->cantidad * $p->precio);
+    $productos = $query->paginate($porPagina)->withQueryString();
 
-        $categorias = Categoria::all();
+    $pageStockTotal = $productos->sum('cantidad');
+    $pageValorTotal = $productos->sum(fn($p) => $p->cantidad * $p->precio);
 
-        return view('productos.index', compact(
-            'productos',
-            'categorias',
-            'pageStockTotal',
-            'pageValorTotal'
-        ));
-    }
+    $categorias = Categoria::all();
+
+    return view('productos.index', compact(
+        'productos',
+        'categorias',
+        'pageStockTotal',
+        'pageValorTotal',
+        'verTodo'
+    ));
+}
     /*
     |--------------------------------------------------------------------------
     | BUSQUEDA → búsqueda AJAX para autocompletar
@@ -241,5 +235,30 @@ public function destroy(Producto $producto)
     return redirect()
         ->route('productos.index')
         ->with('success', 'Producto eliminado con éxito.');
+}
+
+public function exportExcel(Request $request)
+{
+    return Excel::download(
+        new \App\Exports\ProductoExport($request->all()),
+        'productos.xlsx'
+    );
+}
+
+public function exportPdf(Request $request)
+{
+    $query = Producto::with('categoriaRelacion')
+        ->buscar($request->input('search'))
+        ->filtrarPorCategorias($request->input('categorias') ?? $request->input('categoria'))
+        ->filtrarPorPrecio($request->input('precio_min'), $request->input('precio_max'))
+        ->filtrarPorStock($request->input('stock'))
+        ->ordenar($request->input('ordenar'));
+
+    $productos = $query->get();
+
+    $pdf = Pdf::loadView('productos.pdf', compact('productos'))
+        ->setPaper('A4', 'portrait');
+
+    return $pdf->download('productos.pdf');
 }
 }
