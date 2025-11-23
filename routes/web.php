@@ -23,8 +23,17 @@ Route::get('/', function () {
 });
 
 // Panel → Dashboard (solo usuarios logueados/verificados)
+// Panel → Dashboard (solo usuarios logueados/verificados)
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $totalProductos = \App\Models\Producto::count();
+    $ventasHoy = \App\Models\Venta::whereDate('created_at', \Carbon\Carbon::today())->sum('total');
+    $movimientosHoy = \App\Models\MovimientoStock::whereDate('created_at', \Carbon\Carbon::today())->count();
+    $productosCriticos = \App\Models\Producto::whereColumn('cantidad', '<=', 'stock_minimo')->count();
+
+    $ultimasVentas = \App\Models\Venta::with('detalles')->latest()->take(5)->get();
+    $ultimosMovimientos = \App\Models\MovimientoStock::with('producto')->latest()->take(5)->get();
+
+    return view('dashboard', compact('totalProductos', 'ventasHoy', 'movimientosHoy', 'productosCriticos', 'ultimasVentas', 'ultimosMovimientos'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Rutas protegidas (requieren auth)
@@ -49,6 +58,13 @@ Route::middleware('auth')->group(function () {
     // Registrar devolución
     Route::post('/ventas/{venta}/devolucion', [VentaController::class, 'registrarDevolucion'])
         ->name('ventas.devolucion.store');
+
+        Route::get('/ventas/export/pdf', [VentaController::class, 'exportPdf'])
+        ->name('ventas.export.pdf');
+
+    Route::get('/ventas/export/excel', [VentaController::class, 'exportExcel'])
+        ->name('ventas.export.excel');
+
 
 // Caducidad de productos
         Route::get('/caducidad', [CaducidadController::class, 'index'])
@@ -115,6 +131,13 @@ Route::get('/analisis-productos', [AnalisisProductosController::class, 'index'])
       
     Route::get('/productos/busqueda', [ProductoController::class, 'busqueda'])
         ->name('productos.busqueda');
+
+        Route::get('/productos/export/pdf', [ProductoController::class, 'exportPdf'])
+        ->name('productos.export.pdf');
+
+    Route::get('/productos/export/excel', [ProductoController::class, 'exportExcel'])
+        ->name('productos.export.excel');
+
 
     Route::resource('productos', ProductoController::class);
 
