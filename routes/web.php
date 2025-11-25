@@ -10,6 +10,9 @@ use App\Http\Controllers\MovimientoStockController;
 use App\Http\Controllers\AnalisisProductosController;
 use App\Http\Controllers\CaducidadController;
 use App\Http\Controllers\VentaController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +34,7 @@ Route::get('/dashboard', function () {
     $productosCriticos = \App\Models\Producto::whereColumn('cantidad', '<=', 'stock_minimo')->count();
 
     $ultimasVentas = \App\Models\Venta::with('detalles')->latest()->take(5)->get();
-    $ultimosMovimientos = \App\Models\MovimientoStock::with('producto')->latest()->take(5)->get();
+    $ultimosMovimientos = \App\Models\MovimientoStock::with(['producto', 'user'])->latest()->take(5)->get();
 
     return view('dashboard', compact('totalProductos', 'ventasHoy', 'movimientosHoy', 'productosCriticos', 'ultimasVentas', 'ultimosMovimientos'));
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -140,6 +143,61 @@ Route::get('/analisis-productos', [AnalisisProductosController::class, 'index'])
 
 
     Route::resource('productos', ProductoController::class);
+
+    /*
+    |-----------------------------
+    | Categorías
+    |-----------------------------
+    */
+    Route::resource('categorias', CategoriaController::class);
+    
+    // Búsqueda AJAX
+    Route::get('/categorias-busqueda', [CategoriaController::class, 'busqueda'])
+        ->name('categorias.busqueda');
+    
+    // Exportación
+    Route::get('/categorias/export/pdf', [CategoriaController::class, 'exportPdf'])
+        ->name('categorias.export.pdf');
+    Route::get('/categorias/export/excel', [CategoriaController::class, 'exportExcel'])
+        ->name('categorias.export.excel');
+
+    /*
+    |-----------------------------
+    | Clientes
+    |-----------------------------
+    */
+    // Búsqueda AJAX
+    Route::get('/clientes/busqueda', [ClienteController::class, 'busqueda'])
+        ->name('clientes.busqueda');
+
+    // Exportación
+    Route::get('/clientes/export/pdf', [ClienteController::class, 'exportPdf'])
+        ->name('clientes.export.pdf');
+    Route::get('/clientes/export/excel', [ClienteController::class, 'exportExcel'])
+        ->name('clientes.export.excel');
+
+    Route::resource('clientes', ClienteController::class);
+
+    /*
+    |-----------------------------
+    | Usuarios
+    |-----------------------------
+    */
+    // Búsqueda AJAX
+    Route::get('/users/busqueda', [UserController::class, 'busqueda'])
+        ->name('users.busqueda');
+
+    // Exportación
+    Route::get('/users/export/pdf', [UserController::class, 'exportPdf'])
+        ->name('users.export.pdf');
+    Route::get('/users/export/excel', [UserController::class, 'exportExcel'])
+        ->name('users.export.excel');
+
+    Route::resource('users', UserController::class);
+    Route::get('/users/{user}/change-password', [UserController::class, 'changePasswordForm'])
+        ->name('users.change-password');
+    Route::put('/users/{user}/change-password', [UserController::class, 'updatePassword'])
+        ->name('users.update-password');
 
     /*
     |-----------------------------

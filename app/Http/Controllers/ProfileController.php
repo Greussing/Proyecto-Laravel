@@ -16,8 +16,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        $ventasRealizadas = $user->ventas()->count();
+        $totalVendido = $user->ventas()->sum('total');
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'ventasRealizadas' => $ventasRealizadas,
+            'totalVendido' => $totalVendido,
         ]);
     }
 

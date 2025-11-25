@@ -59,13 +59,17 @@ class DetalleVenta extends Model
 
                 $stockAntes = $producto->cantidad;
                 $producto->cantidad -= $detalle->cantidad;
+                
+                // Marcar que este cambio NO debe registrarse en historial
+                // porque ya se registra como "venta" en VentaService
+                $producto->skipHistoryLog = true;
                 $producto->save();
 
                 MovimientoStock::create([
                     'producto_id'   => $producto->id,
                     'venta_id'      => $detalle->venta_id,
-                    'cliente'       => $detalle->venta->cliente ?? null,   // ✅ cliente en venta
-                    'usuario_id'    => auth()->id() ?? 1, // usuario actual o admin por defecto
+                    'cliente'       => $detalle->venta->cliente ?? null,
+                    'usuario_id'    => auth()->id() ?? 1,
                     'tipo'          => 'venta',
                     'cantidad'      => -$detalle->cantidad,
                     'stock_antes'   => $stockAntes,
@@ -100,19 +104,22 @@ class DetalleVenta extends Model
                 $stockAntes = $producto->cantidad;
                 // si diferencia es positiva, restamos; si es negativa, sumamos
                 $producto->cantidad -= $diferencia;
+                
+                // Marcar que este cambio NO debe registrarse en historial
+                $producto->skipHistoryLog = true;
                 $producto->save();
 
                 MovimientoStock::create([
                     'producto_id'   => $producto->id,
                     'venta_id'      => $detalle->venta_id,
-                    'cliente'       => $detalle->venta->cliente ?? null,   // ✅ cliente en edición
-                    'usuario_id'    => auth()->id() ?? 1, // usuario actual o admin por defecto
+                    'cliente'       => $detalle->venta->cliente ?? null,
+                    'usuario_id'    => auth()->id() ?? 1,
                     'tipo'          => 'edicion',
-                    'cantidad'      => -$diferencia, // registro del movimiento
+                    'cantidad'      => -$diferencia,
                     'stock_antes'   => $stockAntes,
                     'stock_despues' => $producto->cantidad,
                     'detalle' => 'Edición de venta — cantidad modificada (de ' 
-             . $cantidadOriginal . ' a ' . $nuevaCantidad . ')',
+                              . $cantidadOriginal . ' a ' . $nuevaCantidad . ')',
                 ]);
 
                 return true;
@@ -127,14 +134,17 @@ class DetalleVenta extends Model
                 if ($producto) {
                     $stockAntes = $producto->cantidad;
                     $producto->cantidad += $detalle->cantidad;
+                    
+                    // Marcar que este cambio NO debe registrarse en historial
+                    $producto->skipHistoryLog = true;
                     $producto->save();
 
                     // Registramos movimiento en movimientos_stock, no en historial
                     MovimientoStock::create([
                         'producto_id'   => $producto->id,
                         'venta_id'      => $detalle->venta_id,
-                        'cliente'       => $detalle->venta->cliente ?? null,   // ✅ cliente en anulación
-                        'usuario_id'    => auth()->id() ?? 1, // usuario actual o admin por defecto
+                        'cliente'       => $detalle->venta->cliente ?? null,
+                        'usuario_id'    => auth()->id() ?? 1,
                         'tipo'          => 'anulacion',
                         'cantidad'      => $detalle->cantidad,
                         'stock_antes'   => $stockAntes,

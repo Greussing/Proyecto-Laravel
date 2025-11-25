@@ -36,6 +36,6 @@ class User extends Authenticatable
     // 🔹 Relación: un usuario (vendedor) puede tener muchas ventas
     public function ventas()
     {
-        return $this->hasMany(Venta::class, 'vendedor', 'id');
+        return $this->hasMany(Venta::class, 'usuario', 'id');
     }
 }

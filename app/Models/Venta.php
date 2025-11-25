@@ -20,7 +20,7 @@ class Venta extends Model
     ];
 
     protected $casts = [
-        'fecha' => 'datetime',
+        'fecha' => 'datetime:Y-m-d H:i:s',
     ];
 
     /*

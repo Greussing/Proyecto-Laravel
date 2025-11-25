@@ -13,6 +13,12 @@ class Producto extends Model
 
     protected $fillable = ['nombre', 'cantidad', 'precio', 'categoria', 'fecha_vencimiento', 'lote'];
 
+    /**
+     * Flag temporal para evitar registros duplicados en historial
+     * cuando el cambio proviene de ventas/movimientos de stock
+     */
+    public bool $skipHistoryLog = false;
+
 protected $casts = [
     'precio'            => 'float',
     'cantidad'          => 'integer',
@@ -207,31 +213,8 @@ public function movimientosStock()
     }
 
     protected static function booted()
-{
-    static::created(function ($producto) {
-
-        // Detectar si viene del seeder
-        $esSeeder = app()->runningInConsole() && !app()->runningUnitTests();
-
-        // Usuario para historial
-        $usuario = $esSeeder
-            ? 'Sistema (Seeder)'
-            : (auth()->user()->name ?? 'Sistema');
-
-        // Obtener datos
-        $categoria = $producto->categoriaRelacion->nombre ?? 'Sin categoría';
-        $precio = 'Gs. ' . number_format($producto->precio, 0, ',', '.');
-
-        // Registrar historial
-        \App\Models\Historial::create([
-            'producto_id' => $producto->id,
-            'accion'      => 'crear',
-            'descripcion' => "Se agregó el producto '{$producto->nombre}.' "
-                            . "Pertenece a la categoría {$categoria}. "
-                            . "Inicia con {$producto->cantidad} unidades "
-                            . "y un precio de {$precio}.",
-            'user_id'     => null, // Seeder no tiene ID
-        ]);
-    });
-}
+    {
+        // El historial se maneja en ProductoController para tener mejor control
+        // y evitar duplicados
+    }
 }

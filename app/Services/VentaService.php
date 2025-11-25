@@ -36,14 +36,13 @@ class VentaService
 
             // Crear venta
             $venta = Venta::create([
-                'cliente'      => $data['cliente'],
-                'usuario'      => auth()->id(),
-                'total'        => $total,
-                'metodo_pago'  => $data['metodo_pago'],
-                'estado'       => $data['estado'],
-                'fecha'        => $data['fecha'],
+    'cliente'      => $data['cliente'],
+    'usuario'      => auth()->id(),
+    'total'        => $total,
+    'metodo_pago'  => $data['metodo_pago'],
+    'estado'       => $data['estado'],
+    'fecha'        => now(), 
             ]);
-
             // Crear detalle (esto dispara los observers de DetalleVenta que actualizan stock)
             DetalleVenta::create([
                 'venta_id'        => $venta->id,
@@ -103,13 +102,12 @@ class VentaService
 
             // Actualizar venta
             $venta->update([
-                'cliente'      => $data['cliente'],
-                'total'        => $subtotalNuevo,
-                'metodo_pago'  => $data['metodo_pago'],
-                'estado'       => $data['estado'],
-                'fecha'        => $data['fecha'],
-            ]);
-
+    'cliente'      => $data['cliente'],
+    'total'        => $subtotalNuevo,
+    'metodo_pago'  => $data['metodo_pago'],
+    'estado'       => $data['estado'],
+    'fecha'        => now(),
+]);
             // Historial
             Historial::create([
                 'producto_id' => $productoNuevo->id,
@@ -146,14 +144,14 @@ class VentaService
     /**
      * Helper para normalizar precio.
      */
-    protected function normalizarPrecio(string|float|int $precio): float
-    {
-        if (is_numeric($precio)) {
-            return (float) $precio;
-        }
-        
-        // Elimina puntos de miles y cambia coma por punto
-        $precio = str_replace('.', '', $precio);
-        return (float) str_replace(',', '.', $precio);
-    }
+    protected function normalizarPrecio(string|float|int $precio): int
+{
+    // Convertir a string siempre
+    $precio = (string) $precio;
+
+    // Quitar cualquier caracter NO numérico
+    $precio = preg_replace('/\D/', '', $precio);
+
+    return (int) $precio;
+}
 }

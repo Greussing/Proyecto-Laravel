@@ -18,35 +18,48 @@ class ProductoController extends Controller
     {
         $this->authorizeResource(Producto::class, 'producto');
     }
-    /*
-    |--------------------------------------------------------------------------
-    | INDEX → lista de productos con filtros, orden y paginación
-    |--------------------------------------------------------------------------
-    */
-    /**
-     * INDEX → lista de productos con filtros, orden y paginación
-     */
-   public function index(Request $request)
+
+     // INDEX → lista de productos con filtros, orden y paginación
+     
+  public function index(Request $request)
 {
     $query = Producto::with('categoriaRelacion')
         ->buscar($request->input('search'))
-        ->filtrarPorCategorias($request->input('categorias') ?? $request->input('categoria'))
-        ->filtrarPorPrecio($request->input('precio_min'), $request->input('precio_max'))
+
+        // 🔹 Categorías (múltiples)
+        ->filtrarPorCategorias($request->input('categorias'))
+
+        // 🔹 Precio (mín. / máx.)
+        ->filtrarPorPrecio(
+            $request->input('precio_min'),
+            $request->input('precio_max')
+        )
+
+        // 🔹 Stock (uno solo: 'disponibles' | 'agotados')
         ->filtrarPorStock($request->input('stock'))
+
+        // 🔹 Orden
         ->ordenar($request->input('ordenar'));
 
-    // 🔹 verTodo: true si viene verTodo=1, true, on, etc.
-    $verTodo   = $request->boolean('verTodo');
+    // verTodo = muestra todos los productos sin paginar
+    $verTodo = $request->boolean('verTodo');
     $porPagina = $verTodo ? $query->count() : 10;
 
-    // Evitar 0
-    $porPagina = $porPagina > 0 ? $porPagina : 10;
+    // Evitar 0 por si no hay registros
+    if ($porPagina <= 0) {
+        $porPagina = 10;
+    }
 
-    $productos = $query->paginate($porPagina)->withQueryString();
-
+    // Ejecutar paginación
+    $productos = $query
+        ->paginate($porPagina)
+        ->withQueryString(); // Mantiene filtros en paginación
+    
+    // Totales por página
     $pageStockTotal = $productos->sum('cantidad');
     $pageValorTotal = $productos->sum(fn($p) => $p->cantidad * $p->precio);
 
+    // Listado de categorías para el filtro
     $categorias = Categoria::all();
 
     return view('productos.index', compact(
@@ -193,13 +206,15 @@ public function update(ProductoRequest $request, Producto $producto)
         $descripcion .= " Cambios realizados: " . implode("; ", $cambios);
     }
 
-    // Guardar en historial
-    Historial::create([
-        'producto_id' => $producto->id,
-        'user_id'     => auth()->id(),
-        'accion'      => 'editar',
-        'descripcion' => $descripcion,
-    ]);
+    // Guardar en historial SOLO si no viene de una venta/movimiento de stock
+    if (!isset($producto->skipHistoryLog) || !$producto->skipHistoryLog) {
+        Historial::create([
+            'producto_id' => $producto->id,
+            'user_id'     => auth()->id(),
+            'accion'      => 'editar',
+            'descripcion' => $descripcion,
+        ]);
+    }
 
     return redirect()
         ->route('productos.index', ['page' => $request->input('page', 1)])

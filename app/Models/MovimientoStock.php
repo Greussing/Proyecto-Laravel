@@ -35,7 +35,15 @@ public function usuario()
 
     public function producto()
     {
-        return $this->belongsTo(Producto::class);
+        return $this->belongsTo(Producto::class, 'producto_id');
+    }
+
+    /**
+     * Relación: Un movimiento pertenece a un usuario
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 
     public function venta()
