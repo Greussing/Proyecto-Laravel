@@ -66,150 +66,171 @@
         </script>
 
         {{-- Filtro Fechas --}}
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.away="open = false" type="button"
-                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
-                @if (request('fecha_inicio') || request('fecha_fin'))
-                    <span class="text-blue-600 dark:text-blue-400">Fechas</span>
-                @else
-                    Fechas
-                @endif
-                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                     fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                </svg>
-            </button>
-            <div x-show="open"
-                 class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
-                <div class="mb-2">
-                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Desde</label>
-                    <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
-                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
-                </div>
-                <div class="mb-3">
-                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Hasta</label>
-                    <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}"
-                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
-                </div>
-                <button type="submit"
-                        class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">
-                    Aplicar
-                </button>
-                @if (request('fecha_inicio') || request('fecha_fin'))
-                    <a href="{{ route('ventas.index', request()->except(['fecha_inicio', 'fecha_fin', 'page'])) }}"
-                       class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
-                @endif
-            </div>
+<div class="relative" x-data="{ open: false }">
+    <button @click="open = !open" @click.away="open = false" type="button"
+            class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+        @if (request('fecha_desde') || request('fecha_hasta'))
+            <span class="text-blue-600 dark:text-blue-400">Fechas</span>
+        @else
+            Fechas
+        @endif
+        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+             fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+            </svg>
+    </button>
+
+    <div x-show="open" @click.stop
+         class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
+
+        <div class="mb-2">
+            <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Desde</label>
+            <input type="date" name="fecha_desde" value="{{ request('fecha_desde') }}"
+                   class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
         </div>
+
+        <div class="mb-3">
+            <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Hasta</label>
+            <input type="date" name="fecha_hasta" value="{{ request('fecha_hasta') }}"
+                   class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+        </div>
+
+        <button type="submit"
+                class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">
+            Aplicar
+        </button>
+
+        @if (request('fecha_desde') || request('fecha_hasta'))
+            <a href="{{ route('ventas.index', request()->except(['fecha_desde', 'fecha_hasta', 'page'])) }}"
+                class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
+        @endif
+    </div>
+</div>
 
         {{-- Filtro Método Pago --}}
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.away="open = false" type="button"
-                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
-                @if (request('metodo_pago'))
-                    <span class="text-blue-600 dark:text-blue-400">Pago ({{ count((array)request('metodo_pago')) }})</span>
-                @else
-                    Pago
-                @endif
-                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                     fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                </svg>
-            </button>
-            <div x-show="open"
-                 class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
-                @foreach (['Efectivo', 'Tarjeta', 'Transferencia'] as $metodo)
-                    <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
-                        <input type="checkbox" name="metodo_pago[]" value="{{ $metodo }}"
-                               {{ in_array($metodo, (array) request('metodo_pago')) ? 'checked' : '' }}
-                               onchange="this.form.submit()"
-                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $metodo }}</span>
-                    </label>
-                @endforeach
-                @if (request('metodo_pago'))
-                    <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
-                        <a href="{{ route('ventas.index', request()->except(['metodo_pago', 'page'])) }}"
-                           class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar filtro</a>
-                    </div>
-                @endif
+<div class="relative" x-data="{ open: false }">
+    <button @click="open = !open" @click.away="open = false" type="button"
+            class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+        @if (request('metodo_pago'))
+            <span class="text-blue-600 dark:text-blue-400">Pago: {{ request('metodo_pago') }}</span>
+        @else
+            Pago
+        @endif
+        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+             fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1-414z"
+                  clip-rule="evenodd" />
+        </svg>
+    </button>
+
+    <div x-show="open"
+         class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
+
+        @foreach (['Efectivo', 'Tarjeta', 'Transferencia'] as $metodo)
+            <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
+                <input type="radio" name="metodo_pago" value="{{ $metodo }}"
+                       {{ request('metodo_pago') === $metodo ? 'checked' : '' }}
+                       onchange="this.form.submit()"
+                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:ring">
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $metodo }}</span>
+            </label>
+        @endforeach
+
+        @if (request('metodo_pago'))
+            <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                <a href="{{ route('ventas.index', request()->except(['metodo_pago', 'page'])) }}"
+                   class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar</a>
             </div>
-        </div>
+        @endif
+
+    </div>
+</div>
 
         {{-- Filtro Estado --}}
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.away="open = false" type="button"
-                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
-                @if (request('estado'))
-                    <span class="text-blue-600 dark:text-blue-400">Estado ({{ count((array)request('estado')) }})</span>
-                @else
-                    Estado
-                @endif
-                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                     fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                </svg>
-            </button>
-            <div x-show="open"
-                 class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
-                @foreach (['Pagado', 'Pendiente', 'Anulado'] as $estado)
-                    <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
-                        <input type="checkbox" name="estado[]" value="{{ $estado }}"
-                               {{ in_array($estado, (array) request('estado')) ? 'checked' : '' }}
-                               onchange="this.form.submit()"
-                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $estado }}</span>
-                    </label>
-                @endforeach
-                @if (request('estado'))
-                    <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
-                        <a href="{{ route('ventas.index', request()->except(['estado', 'page'])) }}"
-                           class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar filtro</a>
-                    </div>
-                @endif
+<div class="relative" x-data="{ open: false }">
+    <button @click="open = !open" @click.away="open = false" type="button"
+            class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+        @if (request('estado'))
+            <span class="text-blue-600 dark:text-blue-400">Estado: {{ request('estado') }}</span>
+        @else
+            Estado
+        @endif
+        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+             fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+        </svg>
+    </button>
+
+    <div x-show="open"
+         class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
+
+        @foreach (['Pagado', 'Pendiente', 'Anulado'] as $estado)
+            <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
+                <input type="radio" name="estado" value="{{ $estado }}"
+                       {{ request('estado') === $estado ? 'checked' : '' }}
+                       onchange="this.form.submit()"
+                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:ring">
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $estado }}</span>
+            </label>
+        @endforeach
+
+        @if (request('estado'))
+            <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                <a href="{{ route('ventas.index', request()->except(['estado', 'page'])) }}"
+                   class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar</a>
             </div>
-        </div>
+        @endif
+
+    </div>
+</div>
 
         {{-- Filtro Total --}}
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.away="open = false" type="button"
-                    class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
-                @if (request('total_min') || request('total_max'))
-                    <span class="text-blue-600 dark:text-blue-400">Total</span>
-                @else
-                    Total
-                @endif
-                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                     fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                </svg>
-            </button>
-            <div x-show="open"
-                 class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
-                <div class="mb-2">
-                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Mínimo</label>
-                    <input type="text" name="total_min" value="{{ request('total_min') }}" placeholder="Ej: 10000"
-                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
-                </div>
-                <div class="mb-3">
-                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Máximo</label>
-                    <input type="text" name="total_max" value="{{ request('total_max') }}" placeholder="Ej: 500000"
-                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
-                </div>
-                <button type="submit"
-                        class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">
-                    Aplicar
-                </button>
-                @if (request('total_min') || request('total_max'))
-                    <a href="{{ route('ventas.index', request()->except(['total_min', 'total_max', 'page'])) }}"
-                       class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
-                @endif
-            </div>
+<div class="relative" x-data="{ open: false }">
+    <button @click="open = !open" @click.away="open = false" type="button"
+            class="inline-flex items-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-[11px] md:text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+        @if (request('total_min') || request('total_max'))
+            <span class="text-blue-600 dark:text-blue-400">Total</span>
+        @else
+            Total
+        @endif
+        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+             fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+        </svg>
+    </button>
+
+    <div x-show="open" @click.stop
+     class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
+        <div class="mb-2">
+            <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Mínimo</label>
+            <input type="text" name="total_min" id="total_min"
+                   value="{{ request('total_min') }}"
+                   placeholder="Ej: 10.000"
+                   class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
         </div>
+
+        <div class="mb-3">
+            <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Máximo</label>
+            <input type="text" name="total_max" id="total_max"
+                   value="{{ request('total_max') }}"
+                   placeholder="Ej: 500.000"
+                   class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+        </div>
+
+        <button type="submit"
+                class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">
+            Aplicar
+        </button>
+
+        @if (request('total_min') || request('total_max'))
+            <a href="{{ route('ventas.index', request()->except(['total_min', 'total_max', 'page'])) }}"
+               class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
+        @endif
+    </div>
+</div>
 
         {{-- Ordenar --}}
         <div class="relative" x-data="{ open: false }">
@@ -467,6 +488,38 @@
                                 });
                             });
                         </script>
+
+{{-- Script para formatear números (inputs de precio con separador de miles) --}}
+<script>
+    function formatNumber(value) {
+        if (!value) return '';
+        return value.toString()
+            .replace(/\D/g, '')                // quitar todo lo que no sea número
+            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // agregar puntos
+    }
+
+    function applyFormat(input) {
+        input.value = formatNumber(input.value);
+
+        input.addEventListener('input', function () {
+            let cursorPos = this.selectionStart;
+            let originalLength = this.value.length;
+
+            this.value = formatNumber(this.value);
+
+            let newLength = this.value.length;
+            this.selectionEnd = cursorPos + (newLength - originalLength);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const totalMin = document.getElementById('total_min');
+        const totalMax = document.getElementById('total_max');
+
+        if (totalMin) applyFormat(totalMin);
+        if (totalMax) applyFormat(totalMax);
+    });
+</script>
 
                 {{-- Tabla de Ventas --}}
 @if ($ventas->isEmpty())

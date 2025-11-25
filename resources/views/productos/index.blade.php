@@ -83,67 +83,112 @@
                         </div>
 
                         {{-- Filtro Stock --}}
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                                @if (request('stock'))
-                                    <span class="text-blue-600 dark:text-blue-400">Stock</span>
-                                @else
-                                    Stock
-                                @endif
-                                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                            <div x-show="open" class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-2">
-                                <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
-                                    <input type="checkbox" name="stock[]" value="disponibles" id="chk-disponibles"
-                                        {{ in_array('disponibles', (array) request('stock')) ? 'checked' : '' }}
-                                        onchange="this.form.submit()"
-                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">Disponibles</span>
-                                </label>
-                                <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
-                                    <input type="checkbox" name="stock[]" value="agotados" id="chk-agotados"
-                                        {{ in_array('agotados', (array) request('stock')) ? 'checked' : '' }}
-                                        onchange="this.form.submit()"
-                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">Agotados</span>
-                                </label>
-                                @if (request('stock'))
-                                    <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
-                                        <a href="{{ route('productos.index', request()->except(['stock', 'page'])) }}" class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar filtro</a>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
+<div class="relative" x-data="{ open: false }">
+    <button @click="open = !open" @click.away="open = false" type="button"
+        class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
+        rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest
+        shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2
+        focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+
+        @if (request('stock'))
+            @php
+                $stockLabel = [
+                    'disponibles' => 'Disponibles',
+                    'agotados'    => 'Agotados',
+                ];
+                $label = $stockLabel[request('stock')] ?? request('stock');
+            @endphp
+            <span class="text-blue-600 dark:text-blue-400">Stock: {{ $label }}</span>
+        @else
+            Stock
+        @endif
+
+        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd" />
+        </svg>
+    </button>
+
+    <div x-show="open"
+        class="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700
+        ring-1 ring-black ring-opacity-5 p-2">
+
+        @php
+            $opcionesStock = [
+                'disponibles' => 'Disponibles',
+                'agotados'    => 'Agotados',
+            ];
+        @endphp
+
+        @foreach ($opcionesStock as $value => $label)
+            <label
+                class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
+                <input type="radio" name="stock" value="{{ $value }}"
+                    {{ request('stock') === $value ? 'checked' : '' }}
+                    onchange="this.form.submit()"
+                    class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300
+                    focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">{{ $label }}</span>
+            </label>
+        @endforeach
+
+        @if (request('stock'))
+            <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                <a href="{{ route('productos.index', request()->except(['stock', 'page'])) }}"
+                    class="block text-center text-xs text-red-500 hover:text-red-700">Limpiar filtro</a>
+            </div>
+        @endif
+    </div>
+</div>
 
                         {{-- Filtro Precio --}}
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                                @if (request('precio_min') || request('precio_max'))
-                                    <span class="text-blue-600 dark:text-blue-400">Precio</span>
-                                @else
-                                    Precio
-                                @endif
-                                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                            <div x-show="open" class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
-                                <div class="mb-2">
-                                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Mínimo</label>
-                                    <input type="text" name="precio_min" value="{{ request('precio_min') }}" placeholder="Ej: 1.000" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Máximo</label>
-                                    <input type="text" name="precio_max" value="{{ request('precio_max') }}" placeholder="Ej: 50.000" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
-                                </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">Aplicar</button>
-                                @if (request('precio_min') || request('precio_max'))
-                                    <a href="{{ route('productos.index', request()->except(['precio_min', 'precio_max', 'page'])) }}" class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
-                                @endif
-                            </div>
-                        </div>
+<div class="relative" x-data="{ open: false }">
+    <button @click="open = !open" @click.away="open = false" type="button"
+        class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+        @if (request('precio_min') || request('precio_max'))
+            <span class="text-blue-600 dark:text-blue-400">Precio</span>
+        @else
+            Precio
+        @endif
+        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+            fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd" />
+        </svg>
+    </button>
+
+    <div x-show="open" @click.stop
+        class="absolute z-50 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 p-4">
+
+        <div class="mb-2">
+            <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Mínimo</label>
+            <input type="text" name="precio_min" id="precio_min" 
+                value="{{ request('precio_min') }}"
+                placeholder="Ej: 1.000"
+                class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+        </div>
+
+        <div class="mb-3">
+            <label class="block text-xs text-gray-700 dark:text-gray-300 mb-1">Máximo</label>
+            <input type="text" name="precio_max" id="precio_max" 
+                value="{{ request('precio_max') }}"
+                placeholder="Ej: 50.000"
+                class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded hover:bg-blue-700">
+            Aplicar
+        </button>
+
+        @if (request('precio_min') || request('precio_max'))
+            <a href="{{ route('productos.index', request()->except(['precio_min', 'precio_max', 'page'])) }}"
+                class="block text-center text-xs text-red-500 hover:text-red-700 mt-2">Limpiar</a>
+        @endif
+    </div>
+</div>
 
                         {{-- Ordenar --}}
                         <div class="relative" x-data="{ open: false }">
@@ -328,6 +373,36 @@
     });
 </script>
 
+{{-- Script para formatear números (inputs de precio con separador de miles) --}}
+                <script>
+                    function formatNumber(value) {
+                        if (!value) return '';
+                        return value.toString()
+                            .replace(/\D/g, '') // eliminar caracteres no numéricos
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // agregar puntos cada 3 dígitos
+                    }
+
+                    function applyFormat(input) {
+                        input.value = formatNumber(input.value);
+                        input.addEventListener('input', function() {
+                            let cursorPos = this.selectionStart;
+                            let originalLength = this.value.length;
+
+                            this.value = formatNumber(this.value);
+
+                            let newLength = this.value.length;
+                            this.selectionEnd = cursorPos + (newLength - originalLength);
+                        });
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const precioMin = document.getElementById('precio_min');
+                        const precioMax = document.getElementById('precio_max');
+
+                        if (precioMin) applyFormat(precioMin);
+                        if (precioMax) applyFormat(precioMax);
+                    });
+                </script>
 
                 {{-- Tabla de Productos --}}
                 @if ($productos->isEmpty())
